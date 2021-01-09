@@ -18,7 +18,7 @@ from uuid import uuid4
 from requests import HTTPError
 from os.path import join, dirname
 from ovos_utils.configuration import update_mycroft_config
-from ovos_utils.gui import is_gui_connected
+from ovos_utils.skills import blacklist_skill
 from mock_mycroft_backend.configuration import CONFIGURATION
 from adapt.intent import IntentBuilder
 from time import sleep
@@ -26,7 +26,6 @@ from mycroft.api import DeviceApi, is_paired, check_remote_pairing
 from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import MycroftSkill, intent_handler
-from mycroft.configuration import LocalConf, USER_CONFIG
 import mycroft.audio
 
 
@@ -77,37 +76,10 @@ class PairingSkill(MycroftSkill):
         if not is_paired():
             self.add_event("mycroft.ready", self.handle_mycroft_ready)
 
-        # blacklist conflicting skills on install
-        self.blacklist_default_skill()
+        # blacklist conflicting skills
+        blacklist_skill("mycroft-pairing.mycroftai")
 
         self.make_active()  # to enable converse
-
-    def blacklist_default_skill(self):
-        # load the current list of already blacklisted skills
-        blacklist = self.config_core["skills"]["blacklisted_skills"]
-
-        # check the folder name (skill_id) of the skill you want to replace
-        skill_id = "mycroft-pairing.mycroftai"
-
-        # add the skill to the blacklist
-        if skill_id not in blacklist:
-            self.log.debug("Blacklisting official mycroft skill")
-            blacklist.append(skill_id)
-
-            # load the user config file (~/.mycroft/mycroft.conf)
-            conf = LocalConf(USER_CONFIG)
-            if "skills" not in conf:
-                conf["skills"] = {}
-
-            # update the blacklist field
-            conf["skills"]["blacklisted_skills"] = blacklist
-
-            # save the user config file
-            conf.store()
-
-        # tell the intent service to unload the skill in case it was loaded already
-        # this should avoid the need to restart
-        self.bus.emit(Message("detach_skill", {"skill_id": skill_id}))
 
     def not_paired(self, message):
         if not message.data.get('quiet', True):
