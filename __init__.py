@@ -11,7 +11,6 @@
 # limitations under the License.
 #
 import time
-from os.path import expanduser
 from threading import Timer, Lock
 from time import sleep
 from uuid import uuid4
@@ -25,7 +24,6 @@ from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
 from mycroft.util import connected
 from ovos_local_backend.configuration import CONFIGURATION
-from ovos_local_backend.utils.geolocate import ip_geolocate
 from ovos_workshop.skills import OVOSSkill
 from ovos_workshop.skills.decorators import killable_event
 from requests import HTTPError
@@ -233,9 +231,6 @@ class PairingSkill(OVOSSkill):
                 "url": url,
                 "version": version
             },
-            # no web ui to set location, best guess from ip address
-            # should get at least timezone right
-            "location": ip_geolocate("0.0.0.0"),
             "listener": {
                 "wake_word_upload": {
                     "url": f"{url}/precise/upload"
