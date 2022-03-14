@@ -15,7 +15,7 @@ from os.path import expanduser
 from threading import Timer, Lock
 from time import sleep
 from uuid import uuid4
-import subprocess
+
 import mycroft.audio
 from adapt.intent import IntentBuilder
 from mycroft.api import DeviceApi, is_paired, check_remote_pairing
@@ -26,7 +26,6 @@ from mycroft.skills.core import intent_handler
 from mycroft.util import connected
 from ovos_local_backend.configuration import CONFIGURATION
 from ovos_local_backend.utils.geolocate import ip_geolocate
-from ovos_utils.system import system_reboot
 from ovos_workshop.skills import OVOSSkill
 from ovos_workshop.skills.decorators import killable_event
 from requests import HTTPError
@@ -45,7 +44,7 @@ class PairingSkill(OVOSSkill):
         self.activator = None
         self.activator_lock = Lock()
         self.activator_cancelled = False
-
+        self.config_lock = Lock()
         self.counter_lock = Lock()
         self.count = -1  # for repeating pairing code. -1 = not running
 
@@ -54,18 +53,17 @@ class PairingSkill(OVOSSkill):
         self.num_failed_codes = 0
 
         self.in_pairing = False
-        # specific vendors can override this
+        self.initial_stt = self.config_core["stt"]["module"]
+        self.using_mock = self.config_core["server"]["url"] != "https://api.mycroft.ai"
+
+    # startup
+    def initialize(self):
+        # specific distros/vendors can override this
         if "pairing_url" not in self.settings:
             self.settings["pairing_url"] = "home.mycroft.ai"
         if "color" not in self.settings:
             self.settings["color"] = "#FF0000"
 
-        self.initial_stt = self.config_core["stt"]["module"]
-        self.using_mock = self.config_core["server"][
-                              "url"] != "https://api.mycroft.ai"
-
-    # startup
-    def initialize(self):
         if not is_paired():
             # If the device isn't paired catch mycroft.ready to report
             # that the device is ready for use.
@@ -77,8 +75,7 @@ class PairingSkill(OVOSSkill):
 
         # show loading screen once wifi setup ends
         if not connected():
-            self.bus.once("ovos.wifi.setup.completed",
-                          self.show_loading_screen)
+            self.bus.once("ovos.wifi.setup.completed", self.show_loading_screen)
         else:
             # this is usually the first skill to load
             # ASSUMPTION: is the first skill in priority list
@@ -87,16 +84,11 @@ class PairingSkill(OVOSSkill):
         self.add_event("mycroft.not.paired", self.not_paired)
 
         # events for GUI interaction
-        self.gui.register_handler("mycroft.device.set.backend",
-                                  self.handle_backend_selected_event)
-        self.gui.register_handler("mycroft.device.confirm.backend",
-                                  self.handle_backend_confirmation_event)
-        self.gui.register_handler("mycroft.return.select.backend",
-                                  self.handle_return_event)
-        self.gui.register_handler("mycroft.device.confirm.stt",
-                                  self.select_stt)
-        self.gui.register_handler("mycroft.device.confirm.tts",
-                                  self.select_tts)
+        self.gui.register_handler("mycroft.device.set.backend", self.handle_backend_selected_event)
+        self.gui.register_handler("mycroft.device.confirm.backend", self.handle_backend_confirmation_event)
+        self.gui.register_handler("mycroft.return.select.backend", self.handle_return_event)
+        self.gui.register_handler("mycroft.device.confirm.stt", self.select_stt)
+        self.gui.register_handler("mycroft.device.confirm.tts", self.select_tts)
         self.nato_dict = self.translate_namedvalues('codes')
 
     def show_loading_screen(self, message=None):
@@ -115,8 +107,7 @@ class PairingSkill(OVOSSkill):
             self.bus.emit(Message('mycroft.mic.mute'))
             sleep(0.5)  # if TTS had not yet started
             self.bus.emit(Message("mycroft.audio.speech.stop"))
-            sleep(
-                1.5)  # the silence from muting should make STT stop recording
+            sleep(1.5)  # the silence from muting should make STT stop recording
             self.bus.emit(Message('mycroft.mic.unmute'))
 
     def handle_intent_aborted(self):
@@ -133,8 +124,6 @@ class PairingSkill(OVOSSkill):
         self.gui.remove_page("ProcessLoader.qml")
         self.bus.emit(Message("mycroft.gui.screen.close",
                               {"skill_id": self.skill_id}))
-        # Tell OVOS-GUI to finally collect resting screens
-        self.bus.emit(Message("ovos.pairing.process.completed"))
 
     # voice events
     def converse(self, message):
@@ -160,107 +149,114 @@ class PairingSkill(OVOSSkill):
 
     # config handling
     def change_to_mimic(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["tts"] = {
-            "module": "mimic",
-            "mimic": {
-                "voice": "ap",
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["tts"] = {
+                "module": "mimic",
+                "mimic": {
+                    "voice": "ap",
+                }
             }
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def change_to_mimic2(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["tts"] = {
-            "module": "mimic2"
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["tts"] = {
+                "module": "mimic2"
+            }
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def change_to_larynx(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["tts"] = {
-            "module": "neon-tts-plugin-larynx-server",
-            "neon-tts-plugin-larynx-server": {
-                "host": "http://tts.neon.ai",
-                "voice": "mary_ann",
-                "vocoder": "hifi_gan/vctk_small"
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["tts"] = {
+                "module": "neon-tts-plugin-larynx-server",
+                "neon-tts-plugin-larynx-server": {
+                    "host": "http://tts.neon.ai",
+                    "voice": "mary_ann",
+                    "vocoder": "hifi_gan/vctk_small"
+                }
             }
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def change_to_pico(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["tts"] = {
-            "module": "ovos-tts-plugin-pico"
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["tts"] = {
+                "module": "ovos-tts-plugin-pico"
+            }
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def change_to_chromium(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["stt"] = {
-            "module": "ovos-stt-plugin-chromium"
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["stt"] = {
+                "module": "ovos-stt-plugin-chromium"
+            }
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def change_to_kaldi(self):
-        conf = LocalConf(USER_CONFIG)
-        conf["stt"] = {
-            "module": "ovos-stt-plugin-vosk-streaming",
-            "ovos-stt-plugin-vosk-streaming": {
-                "model": expanduser(
-                    "~/.local/share/vosk/vosk-model-small-en-us-0.15")
+        with self.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf["stt"] = {
+                "module": "ovos-stt-plugin-vosk-streaming",
+                "ovos-stt-plugin-vosk-streaming": {
+                    "model": expanduser(
+                        "~/.local/share/vosk/vosk-model-small-en-us-0.15")
+                }
             }
-        }
-        conf.store()
-        self.bus.emit(Message("configuration.patch", {"config": conf}))
+            conf.store()
+            self.bus.emit(Message("configuration.patch", {"config": conf}))
 
     def enable_selene(self):
-        config = {
-            "stt": {"module": "mycroft"},
-            "server": {
-                "url": "https://api.mycroft.ai",
-                "version": "v1"
-            },
-            "listener": {
-                "wake_word_upload": {
-                    "url": "https://training.mycroft.ai/precise/upload"
+        with self.config_lock:
+            config = {
+                "stt": {"module": "mycroft"},
+                "server": {
+                    "url": "https://api.mycroft.ai",
+                    "version": "v1"
+                },
+                "listener": {
+                    "wake_word_upload": {
+                        "url": "https://training.mycroft.ai/precise/upload"
+                    }
                 }
             }
-        }
-        conf = LocalConf(USER_CONFIG)
-        conf.update(config)
-        conf.store()
-        self.using_mock = False
-        self.bus.emit(Message("configuration.patch", {"config": config}))
+            conf = LocalConf(USER_CONFIG)
+            conf.update(config)
+            conf.store()
+            self.using_mock = False
+            self.bus.emit(Message("configuration.patch", {"config": config}))
 
     def enable_mock(self):
-        url = "http://0.0.0.0:{p}".format(p=CONFIGURATION["backend_port"])
-        version = CONFIGURATION["api_version"]
-        config = {
-            "server": {
-                "url": url,
-                "version": version
-            },
-            # no web ui to set location, best guess from ip address
-            # should get at least timezone right
-            "location": ip_geolocate("0.0.0.0"),
-            "listener": {
-                "wake_word_upload": {
-                    "url": "http://0.0.0.0:{p}/precise/upload".format(
-                        p=CONFIGURATION["backend_port"])
+        with self.config_lock:
+            url = f"http://0.0.0.0:{CONFIGURATION['backend_port']}"
+            version = CONFIGURATION["api_version"]
+            config = {
+                "server": {
+                    "url": url,
+                    "version": version
+                },
+                # no web ui to set location, best guess from ip address
+                # should get at least timezone right
+                "location": ip_geolocate("0.0.0.0"),
+                "listener": {
+                    "wake_word_upload": {
+                        "url": f"{url}/precise/upload"
+                    }
                 }
             }
-        }
-        conf = LocalConf(USER_CONFIG)
-        conf.update(config)
-        conf.store()
-        self.using_mock = True
-        self.bus.emit(Message("configuration.patch", {"config": config}))
+            conf = LocalConf(USER_CONFIG)
+            conf.update(config)
+            conf.store()
+            self.using_mock = True
+            self.bus.emit(Message("configuration.patch", {"config": config}))
 
     # Pairing GUI events
     #### Backend selection menu
@@ -286,7 +282,6 @@ class PairingSkill(OVOSSkill):
         if selection == "selene":
             self.handle_display_manager("BackendMycroft")
             self.speak_dialog("selected_mycroft_backend_gui")
-
         elif selection == "local":
             self.handle_display_manager("BackendLocal")
             self.speak_dialog("selected_local_backend_gui")
@@ -335,16 +330,6 @@ class PairingSkill(OVOSSkill):
             self.change_to_chromium()
         elif selection == "kaldi":
             self.change_to_kaldi()
-        if not self.using_mock:
-            self.enable_mock()
-            # create pairing file with dummy data
-            login = {"uuid": self.state,
-                     "access":
-                         "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
-                     "refresh":
-                         "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
-                     "expires_at": time.time() + 999999}
-            IdentityManager.save(login)
         self.handle_tts_menu()
 
     ### TTS selection
@@ -368,16 +353,26 @@ class PairingSkill(OVOSSkill):
             self.change_to_larynx()
         self.handle_display_manager("BackendLocalRestart")
 
+        self.finalize_local_setup()
+
+    def finalize_local_setup(self):
+        if not self.using_mock:
+            self.enable_mock()
+            # create pairing file with dummy data
+            login = {"uuid": self.state,
+                     "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
+                     "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
+                     "expires_at": time.time() + 999999}
+            IdentityManager.save(login)
+
         self.in_pairing = False
         time.sleep(5)
+        # TODO do we really need to restart? where in core is the backend change not accounted for?
+        self.bus.emit(Message("ovos.PHAL.restart.service.audio"))
+        self.bus.emit(Message("ovos.PHAL.restart.service.voice"))
+        self.bus.emit(Message("ovos.PHAL.restart.service.skills"))
 
-        system_reboot()
-        # TODO no need for full restart
-        #subprocess.call("sudo systemctl restart mycroft-audio", shell=True)
-        #subprocess.call("sudo systemctl restart mycroft-voice", shell=True)
-        #subprocess.call("sudo systemctl restart mycroft-skills", shell=True)
-
-    # pairing
+    # selene pairing
     def kickoff_pairing(self):
         # Kick off pairing...
         with self.counter_lock:
