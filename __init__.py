@@ -148,31 +148,32 @@ class PairingSkill(OVOSSkill):
             self.handle_backend_menu()
 
     # config handling
-    def change_to_mimic(self):
+    def update_user_config(self, config):
         with self.config_lock:
             conf = LocalConf(USER_CONFIG)
-            conf["tts"] = {
-                "module": "mimic",
-                "mimic": {
-                    "voice": "ap",
-                }
-            }
+            conf.merge(config)
             conf.store()
             self.bus.emit(Message("configuration.patch", {"config": conf}))
+
+    def change_to_mimic(self):
+        self.update_user_config({
+            "tts": {
+                "module": "mimic",
+                "mimic": {"voice": "ap"}
+            }
+        })
 
     def change_to_mimic2(self):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf["tts"] = {
-                "module": "mimic2"
+        self.update_user_config({
+            "tts": {
+                "module": "mimic2",
+                "mimic2": {"voice": "kusal"}
             }
-            conf.store()
-            self.bus.emit(Message("configuration.patch", {"config": conf}))
+        })
 
     def change_to_larynx(self):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf["tts"] = {
+        self.update_user_config({
+            "tts": {
                 "module": "neon-tts-plugin-larynx-server",
                 "neon-tts-plugin-larynx-server": {
                     "host": "http://tts.neon.ai",
@@ -180,83 +181,69 @@ class PairingSkill(OVOSSkill):
                     "vocoder": "hifi_gan/vctk_small"
                 }
             }
-            conf.store()
-            self.bus.emit(Message("configuration.patch", {"config": conf}))
+        })
 
     def change_to_pico(self):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf["tts"] = {
-                "module": "ovos-tts-plugin-pico"
+        self.update_user_config({
+            "tts": {
+                "module": "ovos-tts-plugin-pico",
+                "ovos-tts-plugin-pico": {}
             }
-            conf.store()
-            self.bus.emit(Message("configuration.patch", {"config": conf}))
+        })
 
     def change_to_chromium(self):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf["stt"] = {
-                "module": "ovos-stt-plugin-chromium"
+        self.update_user_config({
+            "stt": {
+                "module": "ovos-stt-plugin-chromium",
+                "ovos-stt-plugin-chromium": {}
             }
-            conf.store()
-            self.bus.emit(Message("configuration.patch", {"config": conf}))
+        })
 
     def change_to_kaldi(self):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf["stt"] = {
+        self.update_user_config({
+            "stt": {
                 "module": "ovos-stt-plugin-vosk-streaming",
-                "ovos-stt-plugin-vosk-streaming": {
-                    "model": expanduser(
-                        "~/.local/share/vosk/vosk-model-small-en-us-0.15")
-                }
+                # model path not set, small model for lang auto downloaded to XDG directory
+                # en-us already bundled in OVOS image
+                "ovos-stt-plugin-vosk-streaming": {}
             }
-            conf.store()
-            self.bus.emit(Message("configuration.patch", {"config": conf}))
+        })
 
     def enable_selene(self):
-        with self.config_lock:
-            config = {
-                "stt": {"module": "mycroft"},
-                "server": {
-                    "url": "https://api.mycroft.ai",
-                    "version": "v1"
-                },
-                "listener": {
-                    "wake_word_upload": {
-                        "url": "https://training.mycroft.ai/precise/upload"
-                    }
+        config = {
+            "stt": {"module": "mycroft"},
+            "server": {
+                "url": "https://api.mycroft.ai",
+                "version": "v1"
+            },
+            "listener": {
+                "wake_word_upload": {
+                    "url": "https://training.mycroft.ai/precise/upload"
                 }
             }
-            conf = LocalConf(USER_CONFIG)
-            conf.update(config)
-            conf.store()
-            self.using_mock = False
-            self.bus.emit(Message("configuration.patch", {"config": config}))
+        }
+        self.update_user_config(config)
+        self.using_mock = False
 
     def enable_mock(self):
-        with self.config_lock:
-            url = f"http://0.0.0.0:{CONFIGURATION['backend_port']}"
-            version = CONFIGURATION["api_version"]
-            config = {
-                "server": {
-                    "url": url,
-                    "version": version
-                },
-                # no web ui to set location, best guess from ip address
-                # should get at least timezone right
-                "location": ip_geolocate("0.0.0.0"),
-                "listener": {
-                    "wake_word_upload": {
-                        "url": f"{url}/precise/upload"
-                    }
+        url = f"http://0.0.0.0:{CONFIGURATION['backend_port']}"
+        version = CONFIGURATION["api_version"]
+        config = {
+            "server": {
+                "url": url,
+                "version": version
+            },
+            # no web ui to set location, best guess from ip address
+            # should get at least timezone right
+            "location": ip_geolocate("0.0.0.0"),
+            "listener": {
+                "wake_word_upload": {
+                    "url": f"{url}/precise/upload"
                 }
             }
-            conf = LocalConf(USER_CONFIG)
-            conf.update(config)
-            conf.store()
-            self.using_mock = True
-            self.bus.emit(Message("configuration.patch", {"config": config}))
+        }
+        self.update_user_config(config)
+        self.using_mock = True
 
     # Pairing GUI events
     #### Backend selection menu
