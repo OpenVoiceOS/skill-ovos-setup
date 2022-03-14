@@ -51,7 +51,6 @@ class PairingSkill(OVOSSkill):
         self.num_failed_codes = 0
 
         self.in_pairing = False
-        self.initial_stt = self.config_core["stt"]["module"]
         self.using_mock = self.config_core["server"]["url"] != "https://api.mycroft.ai"
 
     # startup
@@ -156,16 +155,16 @@ class PairingSkill(OVOSSkill):
     def change_to_mimic(self):
         self.update_user_config({
             "tts": {
-                "module": "mimic",
-                "mimic": {"voice": "ap"}
+                "module": "ovos-tts-plugin-mimic",
+                "ovos-tts-plugin-mimic": {"voice": "ap"}
             }
         })
 
     def change_to_mimic2(self):
         self.update_user_config({
             "tts": {
-                "module": "mimic2",
-                "mimic2": {"voice": "kusal"}
+                "module": "ovos-tts-plugin-mimic2",
+                "ovos-tts-plugin-mimic2": {"voice": "kusal"}
             }
         })
 
