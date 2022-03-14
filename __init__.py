@@ -349,9 +349,7 @@ class PairingSkill(OVOSSkill):
         self.in_pairing = False
         time.sleep(5)
         # TODO do we really need to restart? where in core is the backend change not accounted for?
-        self.bus.emit(Message("ovos.PHAL.restart.service.audio"))
-        self.bus.emit(Message("ovos.PHAL.restart.service.voice"))
-        self.bus.emit(Message("ovos.PHAL.restart.service.skills"))
+        self.bus.emit(Message("system.reboot"))
 
     # selene pairing
     def kickoff_pairing(self):
