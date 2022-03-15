@@ -52,6 +52,8 @@ class PairingSkill(OVOSSkill):
 
         self.in_pairing = False
         self.using_mock = self.config_core["server"]["url"] != "https://api.mycroft.ai"
+        self.selected_stt = None
+        self.selected_tts = None
 
     # startup
     def initialize(self):
@@ -305,12 +307,8 @@ class PairingSkill(OVOSSkill):
         self.speak_dialog("select_mycroft_stt_gui")
 
     def select_stt(self, message):
-        selection = message.data["engine"]
+        self.selected_stt = message.data["engine"]
         self.send_stop_signal("pairing.stt.menu.stop")
-        if selection == "google":
-            self.change_to_chromium()
-        elif selection == "kaldi":
-            self.change_to_kaldi()
         self.handle_tts_menu()
 
     ### TTS selection
@@ -322,33 +320,42 @@ class PairingSkill(OVOSSkill):
         self.speak_dialog("select_mycroft_tts_gui")
 
     def select_tts(self, message):
-        selection = message.data["engine"]
+        self.selected_tts = message.data["engine"]
         self.send_stop_signal()
-        if selection == "mimic":
-            self.change_to_mimic()
-        elif selection == "mimic2":
-            self.change_to_mimic2()
-        elif selection == "pico":
-            self.change_to_pico()
-        elif selection == "larynx":
-            self.change_to_larynx()
         self.handle_display_manager("BackendLocalRestart")
-
         self.finalize_local_setup()
 
+    ## Local backend
     def finalize_local_setup(self):
-        if not self.using_mock:
-            self.enable_mock()
-            # create pairing file with dummy data
-            login = {"uuid": self.state,
-                     "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
-                     "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
-                     "expires_at": time.time() + 999999}
-            IdentityManager.save(login)
+        # set STT
+        if self.selected_stt == "google":
+            self.change_to_chromium()
+        elif self.selected_stt == "kaldi":
+            self.change_to_kaldi()
+
+        # set TTS
+        if self.selected_tts == "mimic":
+            self.change_to_mimic()
+        elif self.selected_tts == "mimic2":
+            self.change_to_mimic2()
+        elif self.selected_tts == "pico":
+            self.change_to_pico()
+        elif self.selected_tts == "larynx":
+            self.change_to_larynx()
+
+        # set backend
+        self.enable_mock()
+        # create pairing file with dummy data
+        login = {"uuid": self.state,
+                 "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
+                 "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
+                 "expires_at": time.time() + 999999}
+        IdentityManager.save(login)
 
         self.in_pairing = False
-        time.sleep(5)
-        # TODO do we really need to restart? where in core is the backend change not accounted for?
+        time.sleep(5)  # allow the reboot animation for a bit
+        # TODO do we really need to restart?
+        #  where in core is the backend change not accounted for?
         self.bus.emit(Message("system.reboot"))
 
     # selene pairing
