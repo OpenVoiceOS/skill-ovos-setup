@@ -22,7 +22,6 @@ from mycroft.configuration import LocalConf, USER_CONFIG
 from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
-from mycroft.util import connected
 from ovos_local_backend.configuration import CONFIGURATION
 from ovos_workshop.skills import OVOSSkill
 from ovos_workshop.skills.decorators import killable_event
@@ -63,24 +62,19 @@ class PairingSkill(OVOSSkill):
         if "color" not in self.settings:
             self.settings["color"] = "#FF0000"
 
+        # this is usually the first skill to load
+        # ASSUMPTION: is the first skill in priority list
+        self.show_loading_screen()
+
         if not is_paired():
             # If the device isn't paired catch mycroft.ready to report
             # that the device is ready for use.
-            # This assumes that the pairing skill is loaded as a priority skill
-            # before the rest of the skills are loaded.
             self.add_event("mycroft.ready", self.handle_mycroft_ready)
             self.in_pairing = True
             self.make_active()  # to enable converse
 
-        # show loading screen once wifi setup ends
-        if not connected():
-            self.bus.once("ovos.wifi.setup.completed", self.show_loading_screen)
-        else:
-            # this is usually the first skill to load
-            # ASSUMPTION: is the first skill in priority list
-            self.show_loading_screen()
-
         self.add_event("mycroft.not.paired", self.not_paired)
+        self.add_event("ovos.wifi.setup.started", self.handle_wifi_start)
 
         # events for GUI interaction
         self.gui.register_handler("mycroft.device.set.backend", self.handle_backend_selected_event)
@@ -90,14 +84,25 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.select_tts)
         self.nato_dict = self.translate_namedvalues('codes')
 
-        # trigger initial pairing
         if not is_paired():
+            # If the device isn't paired catch mycroft.ready to release gui
+            self.bus.once("mycroft.ready", self.handle_mycroft_ready)
+            self.make_active()  # to enable converse
             self.bus.emit(Message("mycroft.not.paired"))
         else:
             self.update_device_attributes_on_backend()
 
     def show_loading_screen(self, message=None):
         self.handle_display_manager("LoadingScreen")
+
+    def handle_wifi_start(self, message):
+        # do a pairing check once wifi setup is complete
+        self.bus.once("ovos.wifi.setup.completed",
+                      self.handle_wifi_finish)
+
+    def handle_wifi_finish(self, message):
+        if not is_paired():
+            self.bus.emit(message.forward("mycroft.not.paired"))
 
     def send_stop_signal(self, stop_event=None, should_sleep=True):
         # TODO move this one into default OVOSkill class
@@ -126,9 +131,11 @@ class PairingSkill(OVOSSkill):
     def handle_mycroft_ready(self, message):
         """Catch info that skills are loaded and ready."""
         self.mycroft_ready = True
-        self.gui.remove_page("ProcessLoader.qml")
-        self.bus.emit(Message("mycroft.gui.screen.close",
-                              {"skill_id": self.skill_id}))
+        # if using selene close the gui, otherwise wait for device reboot
+        if not self.using_mock:
+            self.gui.remove_page("ProcessLoader.qml")
+            self.bus.emit(Message("mycroft.gui.screen.close",
+                                  {"skill_id": self.skill_id}))
 
     # voice events
     def converse(self, message):
