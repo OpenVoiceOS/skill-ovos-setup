@@ -68,13 +68,6 @@ class PairingSkill(OVOSSkill):
             # if we have internet then there is no wifi gui displayed
             self.show_loading_screen()
 
-        if not is_paired():
-            # If the device isn't paired catch mycroft.ready to report
-            # that the device is ready for use.
-            self.add_event("mycroft.ready", self.handle_mycroft_ready)
-            self.in_pairing = True
-            self.make_active()  # to enable converse
-
         self.add_event("mycroft.not.paired", self.not_paired)
         self.add_event("ovos.wifi.setup.started", self.handle_wifi_start)
 
