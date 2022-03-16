@@ -90,6 +90,10 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.select_tts)
         self.nato_dict = self.translate_namedvalues('codes')
 
+        # trigger initial pairing
+        if not is_paired():
+            self.bus.emit(Message("mycroft.not.paired"))
+
     def show_loading_screen(self, message=None):
         self.handle_display_manager("LoadingScreen")
 
