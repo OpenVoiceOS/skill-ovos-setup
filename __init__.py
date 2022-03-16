@@ -63,13 +63,7 @@ class PairingSkill(OVOSSkill):
         if "color" not in self.settings:
             self.settings["color"] = "#FF0000"
 
-        # ASSUMPTION: paiting the first skill in priority list -> first to load
-        if is_connected():
-            # if we have internet then there is no wifi gui displayed
-            self.show_loading_screen()
-
         self.add_event("mycroft.not.paired", self.not_paired)
-        self.add_event("ovos.wifi.setup.started", self.handle_wifi_start)
 
         # events for GUI interaction
         self.gui.register_handler("mycroft.device.set.backend", self.handle_backend_selected_event)
@@ -79,23 +73,29 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.select_tts)
         self.nato_dict = self.translate_namedvalues('codes')
 
+        # ASSUMPTION: pairing is the first skill in priority list -> first to load
+        # we can take over the GUI during boot sequence
+        wifi = is_connected()
+        if wifi:
+            # if we have internet then there is no wifi gui displayed
+            self.show_loading_screen()
+
         if not is_paired():
-            # If the device isn't paired catch mycroft.ready to release gui
-            self.bus.once("mycroft.ready", self.handle_mycroft_ready)
             self.make_active()  # to enable converse
-            self.bus.emit(Message("mycroft.not.paired"))
+            if wifi:
+                # trigger pairing
+                self.bus.emit(Message("mycroft.not.paired"))
+            else:
+                # trigger pairing after wifi
+                self.bus.once("ovos.wifi.setup.completed", self.handle_wifi_finish)
         else:
             self.update_device_attributes_on_backend()
 
     def show_loading_screen(self, message=None):
         self.handle_display_manager("LoadingScreen")
 
-    def handle_wifi_start(self, message):
-        # do a pairing check once wifi setup is complete
-        self.bus.once("ovos.wifi.setup.completed",
-                      self.handle_wifi_finish)
-
     def handle_wifi_finish(self, message):
+        self.show_loading_screen()
         if not is_paired():
             self.bus.emit(message.forward("mycroft.not.paired"))
 
@@ -119,6 +119,8 @@ class PairingSkill(OVOSSkill):
         self.log.info("killing all dialogs")
 
     def not_paired(self, message):
+        # If the device isn't paired catch mycroft.ready to release gui
+        self.bus.once("mycroft.ready", self.handle_mycroft_ready)
         if not message.data.get('quiet', True):
             self.speak_dialog("pairing.not.paired")
         self.handle_pairing()
