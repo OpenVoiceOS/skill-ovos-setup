@@ -51,9 +51,13 @@ class PairingSkill(OVOSSkill):
         self.num_failed_codes = 0
 
         self.in_pairing = False
-        self.using_mock = self.config_core["server"]["url"] != "https://api.mycroft.ai"
         self.selected_stt = None
         self.selected_tts = None
+        self.selected_backend = ""
+
+    @property
+    def using_mock(self):
+        return self.config_core["server"]["url"] != "https://api.mycroft.ai"
 
     # startup
     def initialize(self):
@@ -128,11 +132,13 @@ class PairingSkill(OVOSSkill):
     def handle_mycroft_ready(self, message):
         """Catch info that skills are loaded and ready."""
         self.mycroft_ready = True
-        # if using selene close the gui, otherwise wait for device reboot
-        if not self.using_mock:
-            self.gui.remove_page("ProcessLoader.qml")
-            self.bus.emit(Message("mycroft.gui.screen.close",
-                                  {"skill_id": self.skill_id}))
+        # if using local backend wait for device reboot
+        if self.selected_backend == "local":
+            return
+        # clear gui, either the pairing page or the initial loading page
+        self.gui.remove_page("ProcessLoader.qml")
+        self.bus.emit(Message("mycroft.gui.screen.close",
+                              {"skill_id": self.skill_id}))
 
     # voice events
     def converse(self, message):
@@ -232,7 +238,7 @@ class PairingSkill(OVOSSkill):
             }
         }
         self.update_user_config(config)
-        self.using_mock = False
+        self.selected_backend = "selene"
 
     def enable_mock(self):
         url = f"http://0.0.0.0:{CONFIGURATION['backend_port']}"
@@ -249,7 +255,7 @@ class PairingSkill(OVOSSkill):
             }
         }
         self.update_user_config(config)
-        self.using_mock = True
+        self.selected_backend = "local"
 
     # Pairing GUI events
     #### Backend selection menu
