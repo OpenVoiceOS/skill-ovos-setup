@@ -26,6 +26,7 @@ from ovos_local_backend.configuration import CONFIGURATION
 from ovos_workshop.skills import OVOSSkill
 from ovos_workshop.skills.decorators import killable_event
 from requests import HTTPError
+from ovos_utils.network_utils import is_connected
 
 
 class PairingSkill(OVOSSkill):
@@ -62,9 +63,10 @@ class PairingSkill(OVOSSkill):
         if "color" not in self.settings:
             self.settings["color"] = "#FF0000"
 
-        # this is usually the first skill to load
-        # ASSUMPTION: is the first skill in priority list
-        self.show_loading_screen()
+        # ASSUMPTION: paiting the first skill in priority list -> first to load
+        if is_connected():
+            # if we have internet then there is no wifi gui displayed
+            self.show_loading_screen()
 
         if not is_paired():
             # If the device isn't paired catch mycroft.ready to report
