@@ -214,10 +214,11 @@ class PairingSkill(OVOSSkill):
             }
         })
 
-    def change_to_kaldi(self):
+    def change_to_vosk(self):
         self.update_user_config({
             "stt": {
                 "module": "ovos-stt-plugin-vosk-streaming",
+                "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
                 # model path not set, small model for lang auto downloaded to XDG directory
                 # en-us already bundled in OVOS image
                 "ovos-stt-plugin-vosk-streaming": {}
@@ -347,7 +348,7 @@ class PairingSkill(OVOSSkill):
         if self.selected_stt == "google":
             self.change_to_chromium()
         elif self.selected_stt == "kaldi":
-            self.change_to_kaldi()
+            self.change_to_vosk()
 
         # set TTS
         if self.selected_tts == "mimic":
