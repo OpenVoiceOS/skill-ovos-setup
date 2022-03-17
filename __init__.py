@@ -210,6 +210,10 @@ class PairingSkill(OVOSSkill):
         self.update_user_config({
             "stt": {
                 "module": "ovos-stt-plugin-chromium",
+                "fallback_module": "ovos-stt-plugin-vosk",
+                # vosk model path not set, small model for lang auto downloaded to XDG directory
+                # en-us already bundled in OVOS image
+                "ovos-stt-plugin-vosk": {},
                 "ovos-stt-plugin-chromium": {}
             }
         })
@@ -219,8 +223,9 @@ class PairingSkill(OVOSSkill):
             "stt": {
                 "module": "ovos-stt-plugin-vosk-streaming",
                 "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
-                # model path not set, small model for lang auto downloaded to XDG directory
+                # vosk model path not set, small model for lang auto downloaded to XDG directory
                 # en-us already bundled in OVOS image
+                "ovos-stt-plugin-vosk": {},
                 "ovos-stt-plugin-vosk-streaming": {}
             }
         })
