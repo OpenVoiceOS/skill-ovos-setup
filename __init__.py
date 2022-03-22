@@ -27,6 +27,7 @@ from ovos_workshop.skills import OVOSSkill
 from ovos_workshop.skills.decorators import killable_event
 from requests import HTTPError
 from ovos_utils.network_utils import is_connected
+from ovos_utils.gui import can_use_local_gui
 
 
 class PairingSkill(OVOSSkill):
@@ -153,6 +154,15 @@ class PairingSkill(OVOSSkill):
     def handle_pairing(self, message=None):
         self.in_pairing = True
 
+        if not can_use_local_gui():
+            # TODO add a voice only interface for pairing
+            # auto pair with local backend
+            self.change_to_vosk()
+            self.change_to_mimic2()
+            self.change_to_local_backend()
+            self.finalize_local_setup()
+            return
+
         if self.using_mock:
             # user triggered intent, wants to enable pairing
             self.select_selene()
@@ -230,7 +240,7 @@ class PairingSkill(OVOSSkill):
             }
         })
 
-    def enable_selene(self):
+    def change_to_selene(self):
         config = {
             "stt": {"module": "mycroft"},
             "server": {
@@ -246,7 +256,7 @@ class PairingSkill(OVOSSkill):
         self.update_user_config(config)
         self.selected_backend = "selene"
 
-    def enable_mock(self):
+    def change_to_local_backend(self):
         url = f"http://0.0.0.0:{CONFIGURATION['backend_port']}"
         version = CONFIGURATION["api_version"]
         config = {
@@ -301,7 +311,7 @@ class PairingSkill(OVOSSkill):
     def select_selene(self):
         # selene selected
         if self.using_mock:
-            self.enable_selene()
+            self.change_to_selene()
             self.data = None
             # TODO needs to restart, user wants to change back to selene
             # eg, local was selected and at some point user said
@@ -366,7 +376,7 @@ class PairingSkill(OVOSSkill):
             self.change_to_larynx()
 
         # set backend
-        self.enable_mock()
+        self.change_to_local_backend()
         # create pairing file with dummy data
         login = {"uuid": self.state,
                  "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
