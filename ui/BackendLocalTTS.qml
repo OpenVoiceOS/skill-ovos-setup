@@ -28,7 +28,7 @@ Item {
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
     Rectangle {
-        color: Qt.rgba(0, 0, 0, 1)
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
         anchors.margins: Mycroft.Units.gridUnit * 2
 
@@ -50,7 +50,7 @@ Item {
                     wrapMode: Text.WordWrap
                     font.bold: true
                     font.pixelSize: backendView.width * 0.05
-                    color: "#ff0000"
+                    color: Kirigami.Theme.highlightColor
                     text: "Configure Your TTS Engine"
                 }
 
@@ -60,125 +60,174 @@ Item {
                     Layout.alignment: Qt.AlignTop
                     wrapMode: Text.WordWrap
                     font.pixelSize: backendView.width * 0.04
-                    color: "white"
+                    color: Kirigami.Theme.textColor
                     text: "Text-To-Speech (TTS) is the process of converting strings of text into audio of spoken words"
                 }
             }
 
-            ColumnLayout {
+            Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                color: Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
 
-                Button {
-                    id: bt1
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                ColumnLayout {
+                    anchors.fill: parent
 
-                    background: Rectangle {
-                        color: bt1.down ? "#14415E" : "#34a4fc"
-                        border.width: 6
-                        border.color: Qt.darker("#34a4fc", 1.2)
-                        radius: 10
+                    Button {
+                        id: bt1
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Mycroft.Units.gridUnit
+
+                        background: Rectangle {
+                            color: bt1.down ? "transparent" :  Kirigami.Theme.highlightColor
+                            border.width: 3
+                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                            radius: 10
+
+                            Rectangle {
+                                width: parent.width - 12
+                                height: parent.height - 12
+                                anchors.centerIn: parent
+                                color: bt1.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                                radius: 5
+                            }
+                        }
+
+                        contentItem: Kirigami.Heading {
+                            width: parent.width
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            level: 3
+                            color: Kirigami.Theme.textColor
+                            text: "Mimic2 (online male)"
+                        }
+
+                        onClicked: {
+                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                            triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic2"})
+                        }
                     }
 
-                    contentItem: Kirigami.Heading {
-                        width: parent.width
-                        height: parent.height
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideRight
-                        level: 3
-                        text: "Mimic2 (online male)"
+                    Button {
+                        id: bt2
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Mycroft.Units.gridUnit
+
+                        background: Rectangle {
+                            color: bt2.down ? "transparent" :  Kirigami.Theme.highlightColor
+                            border.width: 3
+                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                            radius: 10
+
+                            Rectangle {
+                                width: parent.width - 12
+                                height: parent.height - 12
+                                anchors.centerIn: parent
+                                color: bt2.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                                radius: 5
+                            }
+                        }
+
+                        contentItem: Kirigami.Heading {
+                            width: parent.width
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            level: 3
+                            color: Kirigami.Theme.textColor
+                            text: "Larynx (online female)"
+                        }
+
+                        onClicked: {
+                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                            triggerGuiEvent("mycroft.device.confirm.tts",
+                            {"engine": "larynx"})
+                        }
                     }
 
-                    onClicked: {
-                        triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic2"})
+                    Button {
+                        id: bt3
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Mycroft.Units.gridUnit
+
+                        background: Rectangle {
+                            color: bt3.down ? "transparent" :  Kirigami.Theme.highlightColor
+                            border.width: 3
+                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                            radius: 10
+
+                            Rectangle {
+                                width: parent.width - 12
+                                height: parent.height - 12
+                                anchors.centerIn: parent
+                                color: bt3.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                                radius: 5
+                            }
+                        }
+
+                        contentItem: Kirigami.Heading {
+                            width: parent.width
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            level: 3
+                            color: Kirigami.Theme.textColor
+                            text: "Mimic (offline male)"
+                        }
+
+                        onClicked: {
+                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                            triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic"})
+                        }
                     }
-                }
+                    Button {
+                        id: bt4
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Mycroft.Units.gridUnit
 
-                Button {
-                    id: bt2
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                        background: Rectangle {
+                            color: bt4.down ? "transparent" :  Kirigami.Theme.highlightColor
+                            border.width: 3
+                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                            radius: 10
 
-                    background: Rectangle {
-                        color: bt4.down ? "#BC4729" : "#ee5534"
-                        border.width: 6
-                        border.color: Qt.darker("#ee5534", 1.2)
-                        radius: 10
-                    }
+                            Rectangle {
+                                width: parent.width - 12
+                                height: parent.height - 12
+                                anchors.centerIn: parent
+                                color: bt4.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                                radius: 5
+                            }
+                        }
 
-                    contentItem: Kirigami.Heading {
-                        width: parent.width
-                        height: parent.height
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideRight
-                        level: 3
-                        text: "Larynx (online female)"
-                    }
+                        contentItem: Kirigami.Heading {
+                            width: parent.width
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            level: 3
+                            color: Kirigami.Theme.textColor
+                            text: "Pico (offline female)"
+                        }
 
-                    onClicked: {
-                        triggerGuiEvent("mycroft.device.confirm.tts",
-                        {"engine": "larynx"})
-                    }
-                }
-
-                Button {
-                    id: bt3
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    background: Rectangle {
-                        color: bt1.down ? "#14415E" : "#34a4fc"
-                        border.width: 6
-                        border.color: Qt.darker("#34a4fc", 1.2)
-                        radius: 10
-                    }
-
-                    contentItem: Kirigami.Heading {
-                        width: parent.width
-                        height: parent.height
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideRight
-                        level: 3
-                        text: "Mimic (offline male)"
-                    }
-
-                    onClicked: {
-                        triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic"})
-                    }
-                }
-                Button {
-                    id: bt4
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    background: Rectangle {
-                        color: bt4.down ? "#BC4729" : "#ee5534"
-                        border.width: 6
-                        border.color: Qt.darker("#ee5534", 1.2)
-                        radius: 10
-                    }
-
-                    contentItem: Kirigami.Heading {
-                        width: parent.width
-                        height: parent.height
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideRight
-                        level: 3
-                        text: "Pico (offline female)"
-                    }
-
-                    onClicked: {
-                        triggerGuiEvent("mycroft.device.confirm.tts",
-                        {"engine": "pico"})
+                        onClicked: {
+                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                            triggerGuiEvent("mycroft.device.confirm.tts",
+                            {"engine": "pico"})
+                        }
                     }
                 }
             }

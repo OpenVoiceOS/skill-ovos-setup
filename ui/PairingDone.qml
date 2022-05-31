@@ -27,7 +27,7 @@ Item {
     anchors.fill: parent
 
     Rectangle {
-        color: "black"
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
 
         ColumnLayout {
@@ -38,14 +38,15 @@ Item {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignLeft
                 horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
+                maximumLineCount: 1
                 elide: Text.ElideRight
+                fontSizeMode: Text.Fit
+                minimumPixelSize: 8
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
-                font.pixelSize: 70
-                visible: !content.visible
-                color: "#22a7f0"
+                font.pixelSize: 50
+                color: Kirigami.Theme.highlightColor
                 text: "Hey Mycroft"
             }
             Kirigami.Heading {
@@ -55,11 +56,13 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
+                fontSizeMode: Text.Fit
+                minimumPixelSize: 8
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
-                font.pixelSize: 55
-                visible: !content.visible
+                font.pixelSize: 35
+                color: Kirigami.Theme.textColor
                 text: "What's the\nweather?"
             }
             Kirigami.Heading {
@@ -69,11 +72,13 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
+                fontSizeMode: Text.Fit
+                minimumPixelSize: 8
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
-                font.pixelSize: 55
-                visible: !content.visible
+                font.pixelSize: 35
+                color: Kirigami.Theme.textColor
                 text: "Tell me about\nAbraham Lincoln"
             }
             Kirigami.Heading {
@@ -83,11 +88,13 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
+                fontSizeMode: Text.Fit
+                minimumPixelSize: 8
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
-                font.pixelSize: 55
-                visible: !content.visible
+                font.pixelSize: 35
+                color: Kirigami.Theme.textColor
                 text: "Play the News"
             }
         }

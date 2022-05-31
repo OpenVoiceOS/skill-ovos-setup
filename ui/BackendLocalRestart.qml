@@ -2,20 +2,16 @@ import QtQuick.Layouts 1.4
 import QtQuick 2.4
 import QtQuick.Controls 2.0
 import org.kde.kirigami 2.4 as Kirigami
-
+import QtGraphicalEffects 1.0
 import Mycroft 1.0 as Mycroft
 import org.kde.lottie 1.0
 
 Item {
     id: root
-//     leftPadding: 0
-//     rightPadding: 0
-//     topPadding: 0
-//     bottomPadding: 0
     
     Rectangle {
         anchors.fill: parent
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         
         ColumnLayout {
             id: grid
@@ -31,7 +27,7 @@ Item {
                 font.family: "Noto Sans Display"
                 font.styleName: "Black"
                 text: "Configuring"
-                color: "white"
+                color: Kirigami.Theme.textColor
             }
             
             Label {
@@ -43,7 +39,7 @@ Item {
                 font.family: "Noto Sans Display"
                 font.styleName: "Black"
                 text: "Local Backend"
-                color: "#ff0000"
+                color: Kirigami.Theme.highlightColor
             }
             
             RowLayout {
@@ -51,10 +47,17 @@ Item {
                 Layout.fillWidth: true
                 
                 Image {
+                    id: iconCircle
                     source: "icons/info-circle.svg"
                     Layout.preferredWidth: Kirigami.Units.iconSizes.medium
                     Layout.preferredHeight: Kirigami.Units.iconSizes.medium
                     Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+
+                    ColorOverlay {
+                        source: iconCircle
+                        anchors.fill: iconCircle
+                        color: Kirigami.Theme.textColor
+                    }
                 }
                 
                 Label {
@@ -62,6 +65,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                     font.pixelSize: width * 0.040
                     wrapMode: Text.WordWrap
+                    color: Kirigami.Theme.textColor
                     text: "Device will reboot to complete configuring the device"
                 }
             }

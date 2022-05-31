@@ -10,7 +10,7 @@ Mycroft.Delegate {
     rightPadding: 0
     topPadding: 0
     bottomPadding: 0
-    skillBackgroundColorOverlay: Qt.rgba(0, 0, 0, 1)
+    skillBackgroundColorOverlay: Kirigami.Theme.backgroundColor
 
     property var pageToLoad: sessionData.state
 

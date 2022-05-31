@@ -10,10 +10,6 @@ Item {
     id: root
     property var success: sessionData.status
     anchors.fill: parent
-//     leftPadding: 0
-//     rightPadding: 0
-//     topPadding: 0
-//     bottomPadding: 0
 
     function checkstatus(status) {
         if(status == "Success") {
@@ -26,7 +22,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: Mycroft.Units.gridUnit * 2
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         
         ColumnLayout {
             id: grid
@@ -55,7 +51,7 @@ Item {
                 font.family: "Noto Sans Display"
                 font.styleName: "Black"
                 text: sessionData.label
-                color: "white"
+                color: Kirigami.Theme.textColor
             }
         }
     }

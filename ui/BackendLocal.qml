@@ -25,11 +25,7 @@ import Mycroft 1.0 as Mycroft
 Item {
     id: backendView
     anchors.fill: parent
-//     leftPadding: 0
-//     rightPadding: 0
-//     topPadding: 0
-//     bottomPadding: 0
-//     skillBackgroundColorOverlay: Qt.rgba(0, 0, 0, 1)
+
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
     ListModel {
@@ -49,7 +45,7 @@ Item {
     }
 
     Rectangle {
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
         anchors.margins: Mycroft.Units.gridUnit * 2
 
@@ -70,7 +66,7 @@ Item {
                 font.bold: true
                 font.pixelSize: horizontalMode ? backendView.width * 0.035 : backendView.height * 0.040
                 text: "Local Backend"
-                color: "#ff0000"
+                color: Kirigami.Theme.highlightColor
             }
         }
 
@@ -89,7 +85,7 @@ Item {
                     id: warnText
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    color: "white"
+                    color: Kirigami.Theme.textColor
                     wrapMode: Text.WordWrap
                     font.pixelSize: horizontalMode ? backendView.width * 0.035 : backendView.height * 0.040
                     text: "For personal usage and allows you to run offline"
@@ -114,7 +110,7 @@ Item {
                         width: qViewL.cellWidth
                         height: qViewL.cellHeight
                         radius: 10
-                        color: Qt.rgba(0.1, 0.1, 0.1, 0.9)
+                        color: Qt.darker(Kirigami.Theme.backgroundColor, 1.5)
 
                         Rectangle {
                             id: symb
@@ -123,7 +119,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             height: parent.height - Kirigami.Units.largeSpacing
                             width: Kirigami.Units.iconSizes.medium
-                            color: "#e31525"
+                            color: Kirigami.Theme.highlightColor
                             radius: width
                         }
 
@@ -137,7 +133,7 @@ Item {
                             wrapMode: Text.WordWrap
                             anchors.margins: Kirigami.Units.smallSpacing
                             verticalAlignment: Text.AlignVCenter
-                            color: "white"
+                            color: Kirigami.Theme.textColor
                             text: model.text
                         }
                     }
@@ -161,21 +157,32 @@ Item {
                 Layout.fillHeight: true
 
                 background: Rectangle {
-                    color: btnba1.down ? "#323232" : "#595959"
+                    color: btnba1.down ? "transparent" :  Kirigami.Theme.highlightColor
+                    border.width: 3
+                    border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
                     radius: 10
+
+                    Rectangle {
+                        width: parent.width - 12
+                        height: parent.height - 12
+                        anchors.centerIn: parent
+                        color: btnba1.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                        radius: 5
+                    }
                 }
 
                 contentItem: Kirigami.Heading {
                     level: 3
                     wrapMode: Text.WordWrap
                     font.bold: true
-                    color: "white"
+                    color: Kirigami.Theme.textColor
                     text: "Back"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                 }
 
                 onClicked: {
+                    Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                     triggerGuiEvent("mycroft.return.select.backend", {"page": "local"})
                 }
             }
@@ -186,21 +193,32 @@ Item {
                 Layout.fillHeight: true
 
                 background: Rectangle {
-                    color: btnba2.down ? "#53080e" : "#e31525"
+                    color: btnba2.down ? "transparent" :  Kirigami.Theme.highlightColor
+                    border.width: 3
+                    border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
                     radius: 10
+
+                    Rectangle {
+                        width: parent.width - 12
+                        height: parent.height - 12
+                        anchors.centerIn: parent
+                        color: btnba2.down ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
+                        radius: 5
+                    }
                 }
 
                 contentItem: Kirigami.Heading {
                     level: 3
                     wrapMode: Text.WordWrap
                     font.bold: true
-                    color: "white"
+                    color: Kirigami.Theme.textColor
                     text: "Confirm"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                 }
 
                 onClicked: {
+                    Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                     triggerGuiEvent("mycroft.device.confirm.backend", {"backend": "local"})
                 }
             }

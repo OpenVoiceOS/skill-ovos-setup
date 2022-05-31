@@ -26,12 +26,12 @@ Item {
     id: root
     property var code: sessionData.code
     property var txtcolor: sessionData.txtcolor
-    property var backendurl: sessionData.backendurl
+    property var backendurl: "account.mycroft.ai/pair"
     anchors.fill: parent
     property bool horizontalMode: root.width > root.height ? 1 :0
 
     Rectangle {
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
         anchors.margins: Mycroft.Units.gridUnit * 2
 
@@ -54,22 +54,40 @@ Item {
                     wrapMode: Text.WordWrap
                     elide: Text.ElideRight
                     font.weight: Font.Bold
-                    font.pixelSize: horizontalMode ? root.width * 0.08 : root.height * 0.05
+                    font.pixelSize: horizontalMode ? root.width * 0.07 : root.height * 0.04
                     horizontalAlignment: Text.AlignHCenter
-                    color: "white"
-                    text: "Pair this device at <font color=\'#FF0000\'>" + root.backendurl + "</font>"
+                    color: Kirigami.Theme.textColor
+                    text: "Pair this device at "
                 }
-
                 Kirigami.Heading {
+                    id: sentence3b
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignTop
-                    horizontalAlignment: Text.AlignHCenter
+                    Layout.alignment: horizontalMode ? Qt.AlignVCenter | Qt.AlignLeft : Qt.AlignTop | Qt.AlignLeft
                     wrapMode: Text.WordWrap
                     elide: Text.ElideRight
                     font.weight: Font.Bold
-                    font.pixelSize: horizontalMode ? root.width * 0.12 : root.height * 0.05
-                    color: "#FF0000"
-                    text: root.code
+                    font.pixelSize: horizontalMode ? root.width * 0.07 : root.height * 0.04
+                    horizontalAlignment: Text.AlignHCenter
+                    color: Kirigami.Theme.highlightColor
+                    text: root.backendurl
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.alignment: Qt.AlignTop
+                    color: Qt.darker(Kirigami.Theme.backgroundColor, 1.5)
+
+                    Kirigami.Heading {
+                        anchors.fill: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideRight
+                        font.weight: Font.Bold
+                        font.pixelSize: horizontalMode ? root.width * 0.12 : root.height * 0.05
+                        color: Kirigami.Theme.highlightColor
+                        text: root.code
+                    }
                 }
             }
         }

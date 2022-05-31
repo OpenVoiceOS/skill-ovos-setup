@@ -26,14 +26,9 @@ import org.kde.lottie 1.0
 Item {
     id: root
     anchors.fill: parent
-//     leftPadding: 0
-//     rightPadding: 0
-//     bottomPadding: 0
-//     topPadding: 0
-//     skillBackgroundColorOverlay: Qt.rgba(0, 0, 0, 1)
-    
+
     Rectangle {
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
         anchors.margins: Mycroft.Units.gridUnit * 2
 
@@ -48,7 +43,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                color: "#ff0000"
+                color: Kirigami.Theme.highlightColor
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
@@ -73,7 +68,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                color: "white"
+                color: Kirigami.Theme.textColor
                 font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold

@@ -5,18 +5,15 @@ import org.kde.kirigami 2.4 as Kirigami
 
 import Mycroft 1.0 as Mycroft
 import org.kde.lottie 1.0
+import QtGraphicalEffects 1.0
 
 Item {
     id: loadingScreen
     anchors.fill: parent
-//     leftPadding: 0
-//     rightPadding: 0
-//     bottomPadding: 0
-//     topPadding: 0
     
     Rectangle {
         anchors.fill: parent
-        color: "#000000"
+        color: Kirigami.Theme.backgroundColor
         
         ColumnLayout {
             id: grid
@@ -32,7 +29,7 @@ Item {
                 font.family: "Noto Sans Display"
                 font.styleName: "Black"
                 text: "Starting Up"
-                color: "white"
+                color: Kirigami.Theme.textColor
             }
             
             Label {
@@ -44,7 +41,7 @@ Item {
                 font.family: "Noto Sans Display"
                 font.styleName: "Black"
                 text: "Loading..."
-                color: "#ff0000"
+                color: Kirigami.Theme.highlightColor
             }
 
             LottieAnimation {
