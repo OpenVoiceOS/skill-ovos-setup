@@ -333,13 +333,12 @@ class PairingSkill(OVOSSkill):
         if self.pairing_mode != PairingMode.VOICE:
             self.speak_dialog("select_option_gui")
         if self.pairing_mode != PairingMode.GUI:
+            self.speak_dialog("select_backend", wait=True)
+            self.speak_dialog("backend", wait=True)
             self._backend_menu_voice()
 
     def _backend_menu_voice(self, wait=0):
         sleep(int(wait))
-        self.speak_dialog("select_backend", wait=True)
-        self.speak_dialog("backend", wait=True)
-        sleep(1)
         answer = self.get_response("choose_backend", num_retries=0)
         if answer:
             self.log.info("ANSWER: " + answer)
@@ -352,7 +351,7 @@ class PairingSkill(OVOSSkill):
                                       {"backend": "selene"}))
                 return
             else:
-                self.speak_dialog("no_understand", wait=True)
+                self.speak_dialog("no_understand_backend", wait=True)
 
         sleep(1)  # time for abort to kick in
         # (answer will be None and return before this is killed)
