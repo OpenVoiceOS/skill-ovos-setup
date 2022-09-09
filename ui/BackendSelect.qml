@@ -145,13 +145,54 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text: "No Backend"
+                            text: "Personal Backend"
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.set.backend",
                             {"backend": "local"})
+                        }
+                    }
+
+                    Button {
+                        id: bt3
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Mycroft.Units.gridUnit
+
+                        background: Rectangle {
+                            color: bt3.down ? "transparent" :  Kirigami.Theme.highlightColor
+                            border.width: 6
+                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                            radius: 10
+
+                            Rectangle {
+                                width: parent.width - 32
+                                height: parent.height - 32
+                                anchors.centerIn: parent
+                                color: bt3.down ? Kirigami.Theme.highlightColor : Kirigami.Theme.backgroundColor
+                                radius: 10
+                            }
+                        }
+
+                        contentItem: Label {
+                            width: parent.width
+                            height: parent.height
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
+                            minimumPixelSize: 8
+                            font.pixelSize: 32
+                            text: "No Backend"
+                        }
+
+                        onClicked: {
+                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                            triggerGuiEvent("mycroft.device.set.backend",
+                            {"backend": "offline"})
                         }
                     }
                 }
