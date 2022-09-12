@@ -27,6 +27,7 @@ from ovos_workshop.decorators import killable_event
 from requests import HTTPError
 from ovos_utils.network_utils import is_connected
 from ovos_utils.gui import can_use_gui, can_use_local_gui
+from ovos_utils.device_input import can_use_touch_mouse
 
 from enum import Enum
 
@@ -93,7 +94,8 @@ class PairingSkill(OVOSSkill):
 
         if not can_use_gui(self.bus):
             self.pairing_mode = PairingMode.VOICE
-        elif can_use_local_gui():  # TODO - implement proper check for input capabilities
+        elif can_use_local_gui() and can_use_touch_mouse():
+            # skip the annoying voice prompts loop
             self.pairing_mode = PairingMode.GUI
         else:
             self.pairing_mode = PairingMode.HYBRID
@@ -165,19 +167,24 @@ class PairingSkill(OVOSSkill):
         self.handle_display_manager("OfflineMode")
         self.state = SetupState.INACTIVE
 
-    def send_stop_signal(self, stop_event=None, should_sleep=True):
+    def send_stop_signal(self, stop_event=None):
         # TODO move this one into default OVOSkill class
         # stop the previous event execution
         if stop_event:
             self.bus.emit(Message(stop_event))
+
+        # STT might continue recording and screw up the next get_response
+        self.bus.emit(Message('recognizer_loop:record_stop'))
         # stop TTS
         self.bus.emit(Message("mycroft.audio.speech.stop"))
-        if should_sleep:
-            # STT might continue recording and screw up the next get_response
-            # TODO make mycroft-core allow aborting recording in a sane way
+
+        # special non-ovos handling
+        try:
+            from mycroft.version import OVOS_VERSION_STR
+        except ImportError:
+            # NOTE: mycroft does not have an event to stop recording
+            # this attempts to force a stop
             self.bus.emit(Message('mycroft.mic.mute'))
-            sleep(0.5)  # if TTS had not yet started
-            self.bus.emit(Message("mycroft.audio.speech.stop"))
             sleep(1.5)  # the silence from muting should make STT stop recording
             self.bus.emit(Message('mycroft.mic.unmute'))
 
@@ -390,11 +397,11 @@ class PairingSkill(OVOSSkill):
         self._backend_menu_voice(wait=15)
 
     def handle_backend_selected_event(self, message):
-        self.send_stop_signal("pairing.backend.menu.stop", should_sleep=False)
+        self.send_stop_signal("pairing.backend.menu.stop")
         self.handle_backend_confirmation(message.data["backend"])
 
     def handle_return_event(self, message):
-        self.send_stop_signal("pairing.confirmation.stop", should_sleep=False)
+        self.send_stop_signal("pairing.confirmation.stop")
         page = message.data.get("page", "")
         self.handle_backend_menu()
 
