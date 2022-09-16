@@ -125,8 +125,12 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
-            LOG.info("Starting STT/TTS Config when ready")
-            self.bus.once('mycroft.ready', self.handle_wifi_finish)
+            if self.settings.get('selected_stt') is None:
+                LOG.info(f"Handle STT First Setup")
+                self.bus.once('mycroft.ready', self.handle_stt_menu)
+            elif not self.settings.get('selected_tts') is None:
+                LOG.info(f"Handle TTS First Setup")
+                self.bus.once('mycroft.ready', self.handle_tts_menu)
             self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
             self.update_device_attributes_on_backend()
@@ -350,7 +354,7 @@ class PairingSkill(OVOSSkill):
     ### STT selection
     @killable_event(msg="pairing.stt.menu.stop",
                     callback=handle_intent_aborted)
-    def handle_stt_menu(self):
+    def handle_stt_menu(self, _=None):
         self.state = SetupState.SELECTING_STT
         self.handle_display_manager("BackendLocalSTT")
         LOG.info(f"STT GUI Displayed")
@@ -379,10 +383,10 @@ class PairingSkill(OVOSSkill):
     ### TTS selection
     @killable_event(msg="pairing.tts.menu.stop",
                     callback=handle_intent_aborted)
-    def handle_tts_menu(self):
+    def handle_tts_menu(self, _=None):
+        self.send_stop_signal("pairing.stt.menu.stop")
         self.state = SetupState.SELECTING_TTS
         self.handle_display_manager("BackendLocalTTS")
-        self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts_intro")
         self.speak_dialog("select_option_gui")
 
