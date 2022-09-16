@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import logging
 import time
 from threading import Timer, Lock
 from time import sleep
@@ -27,8 +28,28 @@ from ovos_workshop.decorators import killable_event
 from requests import HTTPError
 from ovos_utils.network_utils import is_connected
 from ovos_utils.gui import can_use_gui
-
+from ovos_utils.log import LOG
 from enum import Enum
+
+
+_default_stt_config = {
+    'ovos-stt-plugin-vosk-streaming': {},
+    'ovos-stt-plugin-server': {
+        "url": "https://stt.openvoiceos.com/stt"
+    }
+}
+
+
+_default_tts_config = {
+    "ovos-tts-plugin-pico": {},
+    "neon-tts-plugin-larynx-server": {
+        "host": "http://tts.neon.ai",
+        "voice": "mary_ann",
+        "vocoder": "hifi_gan/vctk_small"
+    },
+    "ovos-tts-plugin-mimic2": {"voice": "kusal"},
+    "ovos-tts-plugin-mimic": {"voice": "ap"}
+}
 
 
 class SetupState(str, Enum):
@@ -104,8 +125,9 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
+            LOG.info("Starting STT/TTS Config")
             # TODO: REMOVE TESTING CODE
-            self.handle_wifi_finish(Message())
+            self.handle_wifi_finish(Message(""))
             return
             self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
@@ -232,67 +254,21 @@ class PairingSkill(OVOSSkill):
             self.bus.emit(Message("configuration.patch",
                                   {"config": conf}))
 
-    def change_to_mimic(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic",
-                "ovos-tts-plugin-mimic": {"voice": "ap"}
-            }
-        })
+    @staticmethod
+    def _get_stt_module_config(module: str, lang: str = 'en-us'):
+        from ovos_plugin_manager.stt import get_stt_module_configs
+        default_config = get_stt_module_configs(module)
+        config = default_config.get(lang) or _default_stt_config.get(module)
+        LOG.info(config)
+        return config
 
-    def change_to_mimic2(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic2",
-                "ovos-tts-plugin-mimic2": {"voice": "kusal"}
-            }
-        })
-
-    def change_to_larynx(self):
-        self.update_user_config({
-            "tts": {
-                "module": "neon-tts-plugin-larynx-server",
-                "neon-tts-plugin-larynx-server": {
-                    "host": "http://tts.neon.ai",
-                    "voice": "mary_ann",
-                    "vocoder": "hifi_gan/vctk_small"
-                }
-            }
-        })
-
-    def change_to_pico(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-pico",
-                "ovos-tts-plugin-pico": {}
-            }
-        })
-
-    def change_to_chromium(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-server",
-                "fallback_module": "ovos-stt-plugin-vosk",
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-server": {
-                    "url": "https://stt.openvoiceos.com/stt"
-                }
-            }
-        })
-
-    def change_to_vosk(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-vosk-streaming",
-                "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-vosk-streaming": {}
-            }
-        })
+    @staticmethod
+    def _get_tts_module_config(module: str, lang: str = 'en-us'):
+        from ovos_plugin_manager.tts import get_tts_module_configs
+        default_config = get_tts_module_configs(module)
+        config = default_config.get(lang) or _default_tts_config.get(module)
+        LOG.info(config)
+        return config
 
     def change_to_selene(self):
         config = {
@@ -384,10 +360,17 @@ class PairingSkill(OVOSSkill):
     def select_stt(self, message):
         self.selected_stt = message.data["engine"]
         if self.selected_stt == "google":
-            self.change_to_chromium()
+            module_spec = "ovos-stt-plugin-server"
         elif self.selected_stt == "kaldi":
-            self.change_to_vosk()
-
+            module_spec = "ovos-stt-plugin-vosk-streaming"
+        else:
+            module_spec = None
+        if module_spec:
+            self.update_user_config({"tts": {
+                    "module": module_spec,
+                    module_spec: self._get_tts_module_config(module_spec,
+                                                             self.lang)
+                }})
         self.send_stop_signal("pairing.stt.menu.stop")
         self.handle_tts_menu()
 
@@ -404,14 +387,21 @@ class PairingSkill(OVOSSkill):
     def select_tts(self, message):
         self.selected_tts = message.data["engine"]
         if self.selected_tts == "mimic":
-            self.change_to_mimic()
+            module_spec = "ovos-tts-plugin-mimic"
         elif self.selected_tts == "mimic2":
-            self.change_to_mimic2()
+            module_spec = "ovos-tts-plugin-mimic2"
         elif self.selected_tts == "pico":
-            self.change_to_pico()
+            module_spec = "ovos-tts-plugin-pico"
         elif self.selected_tts == "larynx":
-            self.change_to_larynx()
-
+            module_spec = "ovos-tts-plugin-larynx-server"
+        else:
+            module_spec = None
+        if module_spec:
+            self.update_user_config({"stt": {
+                    "module": module_spec,
+                    module_spec: self._get_stt_module_config(module_spec,
+                                                             self.lang)
+                }})
         self.send_stop_signal()
         self.handle_display_manager("LoadingSkills")
         self.state = SetupState.INACTIVE
