@@ -127,6 +127,7 @@ class PairingSkill(OVOSSkill):
         else:
             LOG.info("Starting STT/TTS Config")
             # TODO: REMOVE TESTING CODE
+            self.make_active()  # to enable converse
             self.handle_wifi_finish(Message(""))
             return
             self.state = SetupState.INACTIVE
@@ -169,8 +170,10 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(message.forward("mycroft.not.paired"))
         elif self.settings.get('selected_stt') is None:
+            LOG.info(f"Handle STT First Setup")
             self.handle_stt_menu()
         elif not self.settings.get('selected_tts') is None:
+            LOG.info(f"Handle TTS First Setup")
             self.handle_tts_menu()
         else:
             self.state = SetupState.INACTIVE
@@ -353,12 +356,14 @@ class PairingSkill(OVOSSkill):
     def handle_stt_menu(self):
         self.state = SetupState.SELECTING_STT
         self.handle_display_manager("BackendLocalSTT")
+        LOG.info(f"STT GUI Displayed")
         self.send_stop_signal("pairing.confirmation.stop")
         self.speak_dialog("stt_intro")
         self.speak_dialog("select_option_gui")
 
     def select_stt(self, message):
         self.selected_stt = message.data["engine"]
+        LOG.info(f"Got STT selection: {self.selected_stt}")
         if self.selected_stt == "google":
             module_spec = "ovos-stt-plugin-server"
         elif self.selected_stt == "kaldi":
