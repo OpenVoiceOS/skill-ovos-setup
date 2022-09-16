@@ -9,8 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-import logging
+
 import time
 from threading import Timer, Lock
 from time import sleep
@@ -40,7 +39,8 @@ _default_stt_config = {
     'google_cloud_streaming': {
         'lang': 'en-us',
         'credential': None
-    }
+    },
+    'deepspeech_stream_local': {}
 }
 
 
@@ -359,10 +359,10 @@ class PairingSkill(OVOSSkill):
     @killable_event(msg="pairing.stt.menu.stop",
                     callback=handle_intent_aborted)
     def handle_stt_menu(self, _=None):
+        self.send_stop_signal("pairing.confirmation.stop")
         self.state = SetupState.SELECTING_STT
         self.handle_display_manager("BackendLocalSTT")
         LOG.info(f"STT GUI Displayed")
-        self.send_stop_signal("pairing.confirmation.stop")
         self.speak_dialog("stt_intro")
         self.speak_dialog("select_option_gui")
 
