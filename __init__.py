@@ -125,11 +125,8 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
-            LOG.info("Starting STT/TTS Config")
-            # TODO: REMOVE TESTING CODE
-            self.make_active()  # to enable converse
-            self.handle_wifi_finish(Message(""))
-            return
+            LOG.info("Starting STT/TTS Config when ready")
+            self.bus.once('mycroft.ready', self.handle_wifi_finish)
             self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
             self.update_device_attributes_on_backend()
