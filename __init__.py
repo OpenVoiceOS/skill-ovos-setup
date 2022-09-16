@@ -36,6 +36,10 @@ _default_stt_config = {
     'ovos-stt-plugin-vosk-streaming': {},
     'ovos-stt-plugin-server': {
         "url": "https://stt.openvoiceos.com/stt"
+    },
+    'google_cloud_streaming': {
+        'lang': 'en-us',
+        'credential': None
     }
 }
 
@@ -366,15 +370,15 @@ class PairingSkill(OVOSSkill):
         self.selected_stt = message.data["engine"]
         LOG.info(f"Got STT selection: {self.selected_stt}")
         if self.selected_stt == "google":
-            module_spec = "ovos-stt-plugin-server"
+            module_spec = "google_cloud_streaming"
         elif self.selected_stt == "kaldi":
             module_spec = "ovos-stt-plugin-vosk-streaming"
         else:
-            module_spec = None
+            module_spec = self.selected_stt
         if module_spec:
-            self.update_user_config({"tts": {
+            self.update_user_config({"stt": {
                     "module": module_spec,
-                    module_spec: self._get_tts_module_config(module_spec,
+                    module_spec: self._get_stt_module_config(module_spec,
                                                              self.lang)
                 }})
         self.send_stop_signal("pairing.stt.menu.stop")
@@ -401,11 +405,11 @@ class PairingSkill(OVOSSkill):
         elif self.selected_tts == "larynx":
             module_spec = "ovos-tts-plugin-larynx-server"
         else:
-            module_spec = None
+            module_spec = self.selected_tts
         if module_spec:
-            self.update_user_config({"stt": {
+            self.update_user_config({"tts": {
                     "module": module_spec,
-                    module_spec: self._get_stt_module_config(module_spec,
+                    module_spec: self._get_tts_module_config(module_spec,
                                                              self.lang)
                 }})
         self.send_stop_signal()

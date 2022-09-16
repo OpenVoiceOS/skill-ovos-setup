@@ -146,13 +146,13 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text: "Vosk STT"
+                            text: "Deepspeech STT"
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.confirm.stt",
-                            {"engine": "vosk"})
+                            {"engine": "deepspeech_stream_local"})
                         }
                     }
                 }
