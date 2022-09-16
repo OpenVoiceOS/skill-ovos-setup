@@ -104,6 +104,9 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
+            # TODO: REMOVE TESTING CODE
+            self.handle_wifi_finish(Message())
+            return
             self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
             self.update_device_attributes_on_backend()
@@ -143,6 +146,10 @@ class PairingSkill(OVOSSkill):
         if not is_paired() or not self.selected_backend:
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(message.forward("mycroft.not.paired"))
+        elif self.settings.get('selected_stt') is None:
+            self.handle_stt_menu()
+        elif not self.settings.get('selected_tts') is None:
+            self.handle_tts_menu()
         else:
             self.state = SetupState.INACTIVE
 
