@@ -382,7 +382,8 @@ class PairingSkill(OVOSSkill):
                                                              self.lang)
                 }})
         self.send_stop_signal("pairing.stt.menu.stop")
-        self.handle_tts_menu()
+        if self.selected_tts is None:
+            self.handle_tts_menu()
 
     ### TTS selection
     @killable_event(msg="pairing.tts.menu.stop",
