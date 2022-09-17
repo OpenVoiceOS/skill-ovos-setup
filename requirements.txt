@@ -3,3 +3,4 @@ ovos-stt-plugin-vosk
 neon-tts-plugin-larynx-server
 ovos-tts-plugin-mimic
 ovos-tts-plugin-mimic2
+ovos-stt-plugin-selene

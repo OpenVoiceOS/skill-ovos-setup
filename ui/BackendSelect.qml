@@ -151,7 +151,7 @@ Item {
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.set.backend",
-                            {"backend": "local"})
+                            {"backend": "personal"})
                         }
                     }
 

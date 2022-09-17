@@ -191,7 +191,7 @@ Item {
 
                 onClicked: {
                     Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("../sounds/clicked.wav"))
-                    triggerGuiEvent("mycroft.return.select.backend", {"page": "local"})
+                    triggerGuiEvent("mycroft.return.select.backend", {"page": "personal"})
                 }
             }
 
@@ -230,7 +230,7 @@ Item {
 
                 onClicked: {
                     Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("../sounds/clicked.wav"))
-                    triggerGuiEvent("mycroft.device.confirm.backend", {"backend": "local"})
+                    triggerGuiEvent("mycroft.device.confirm.backend", {"backend": "personal"})
                 }
             }
         }

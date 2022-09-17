@@ -49,7 +49,7 @@ Item {
                 anchors.centerIn: parent
                 font.bold: true
                 font.pixelSize: horizontalMode ? backendViewPersonalHost.width * 0.035 : backendViewPersonalHost.height * 0.040
-                text: "Local Backend Setup"
+                text: "Personal Backend Setup"
                 color: Kirigami.Theme.highlightColor
             }
         }
@@ -83,7 +83,7 @@ Item {
                     color: Kirigami.Theme.textColor
                     wrapMode: Text.WordWrap
                     font.pixelSize: horizontalMode ? backendViewPersonalHost.width * 0.025 : backendViewPersonalHost.height * 0.030
-                    text: "Pre-Configured Host Address:"
+                    text: "Address:"
                 }
 
                 Item {
@@ -105,7 +105,7 @@ Item {
                     id: hostAddressField
                     Layout.fillWidth: true
                     Layout.preferredHeight: Mycroft.Units.gridUnit * 4
-                    placeholderText: "Example: https://192.168.x.x:8181/..."
+                    placeholderText: "Example: http://192.168.x.x:6712"
                 }
 
                 Item {
