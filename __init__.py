@@ -28,7 +28,7 @@ from requests import HTTPError
 from ovos_utils.network_utils import is_connected
 from ovos_utils.gui import can_use_gui, can_use_local_gui
 from ovos_utils.device_input import can_use_touch_mouse
-
+from ovos_utils.log import LOG
 from enum import Enum
 
 
@@ -57,16 +57,13 @@ class BackendType(str, Enum):
 
 class SetupManager:
     """ helper class to perform setup actions"""
-    def __init__(self, skill):
-        self.skill = skill
-
-    @property
-    def bus(self):
-        return self.skill.bus
+    def __init__(self, bus):
+        self.bus = bus
+        self.config_lock = Lock()
 
     # config handling
     def update_user_config(self, config):
-        with self.skill.config_lock:
+        with self.config_lock:
             conf = LocalConf(USER_CONFIG)
             conf.merge(config)
             conf.store()
@@ -150,7 +147,6 @@ class SetupManager:
             }
         }
         self.update_user_config(config)
-        self.skill.selected_backend = BackendType.SELENE
 
     def change_to_local_backend(self, url="http://0.0.0.0:6712"):
         config = {
@@ -167,7 +163,6 @@ class SetupManager:
             }
         }
         self.update_user_config(config)
-        self.skill.selected_backend = BackendType.PERSONAL
         self.create_dummy_identity()
 
     def change_to_no_backend(self):
@@ -177,13 +172,12 @@ class SetupManager:
             }
         }
         self.update_user_config(config)
-        self.skill.selected_backend = BackendType.OFFLINE
         self.create_dummy_identity()
 
     # backend actions
     def create_dummy_identity(self):
         # create pairing file with dummy data
-        login = {"uuid": self.uuid,
+        login = {"uuid": uuid4(),
                  "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
                  "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
                  "expires_at": time.time() + 999999}
@@ -203,33 +197,231 @@ class SetupManager:
             pass
 
 
-class PairingSkill(OVOSSkill):
-    poll_frequency = 5  # secs between checking server for activation
+class PairingManager:
 
-    def __init__(self):
-        super(PairingSkill, self).__init__("PairingSkill")
-        self.reload_skill = False
+    def __init__(self, bus, enclosure=None,
+                 code_callback=None,
+                 error_callback=None,
+                 success_callback=None,
+                 start_callback=None,
+                 restart_callback=None,
+                 end_callback=None):
+        self.restart_callback = restart_callback
+        self.code_callback = code_callback
+        self.error_callback = error_callback
+        self.success_callback = success_callback
+        self.start_callback = start_callback
+        self.end_callback = end_callback
+
+        self.bus = bus
+        self.enclosure = enclosure
         self.api = DeviceApi()
-        self.setup = SetupManager(self)
         self.data = None
         self.time_code_expires = None
         self.uuid = str(uuid4())
         self.activator = None
         self.activator_lock = Lock()
         self.activator_cancelled = False
-        self.config_lock = Lock()
         self.counter_lock = Lock()
         self.count = -1  # for repeating pairing code. -1 = not running
-
-        self.nato_dict = None
-        self.mycroft_ready = False
         self.num_failed_codes = 0
 
+    def shutdown(self):
+        with self.activator_lock:
+            self.activator_cancelled = True
+            if self.activator:
+                self.activator.cancel()
+        if self.activator:
+            self.activator.join()
+
+    def kickoff_pairing(self):
+        self.data = None
+
+        # Kick off pairing...
+        with self.counter_lock:
+            if self.count > -1:
+                # We snuck in to this handler somehow while the pairing
+                # process is still being setup.  Ignore it.
+                LOG.debug("Ignoring call to handle_pairing")
+                return
+            # Not paired or already pairing, so start the process.
+            self.count = 0
+
+        LOG.debug("Kicking off pairing sequence")
+
+        try:
+            # Obtain a pairing code from the backend
+            self.data = self.api.get_code(self.uuid)
+
+            # Keep track of when the code was obtained.  The codes expire
+            # after 20 hours.
+            self.time_code_expires = time.monotonic() + 72000  # 20 hours
+        except Exception:
+            time.sleep(10)
+            # Call restart pairing here
+            # Bail out after Five minutes (5 * 6 attempts at 10 seconds
+            # interval)
+            if self.num_failed_codes < 5 * 6:
+                self.num_failed_codes += 1
+                self.abort_and_restart(quiet=True)
+            else:
+                self.end_pairing('connection.error')
+                self.num_failed_codes = 0
+            return
+
+        self.num_failed_codes = 0  # Reset counter on success
+
+        # Make sure code stays on display
+        if self.enclosure:
+            self.enclosure.deactivate_mouth_events()
+            txt = self.settings.get("pairing_url") or "home.mycroft.ai"
+            self.enclosure.mouth_text(txt + "      ")
+
+        if self.start_callback:
+            self.start_callback()
+
+        if not self.activator:
+            self.__create_activator()
+
+    def check_for_activate(self):
+        """Method is called every 10 seconds by Timer. Checks if user has
+        activated the device yet on home.mycroft.ai and if not repeats
+        the pairing code every 60 seconds.
+        """
+        try:
+            # Attempt to activate.  If the user has completed pairing on the,
+            # backend, this will succeed.  Otherwise it throws and HTTPError()
+
+            token = self.data.get("token")
+            login = self.api.activate(self.uuid, token)  # HTTPError() thrown
+
+            # When we get here, the pairing code has been entered on the
+            # backend and pairing can now be saved.
+            # The following is kinda ugly, but it is really critical that we
+            # get this saved successfully or we need to let the user know that
+            # they have to perform pairing all over again at the website.
+            try:
+                IdentityManager.save(login)
+            except Exception as e:
+                LOG.debug("First save attempt failed: " + repr(e))
+                time.sleep(2)
+                try:
+                    IdentityManager.save(login)
+                except Exception as e2:
+                    # Something must be seriously wrong
+                    LOG.debug("Second save attempt failed: " + repr(e2))
+                    self.abort_and_restart()
+
+            if mycroft.audio.is_speaking():
+                # Assume speaking is the pairing code.  Stop TTS of that.
+                mycroft.audio.stop_speaking()
+
+            self.bus.emit(Message("mycroft.paired", login))
+            if self.enclosure:
+                self.enclosure.activate_mouth_events()  # clears the display
+            if self.success_callback:
+                self.success_callback()
+
+            # Un-mute.  Would have been muted during onboarding for a new
+            # unit, and not dangerous to do if pairing was started
+            # independently.
+            self.bus.emit(Message("mycroft.mic.unmute", None))
+
+        except HTTPError:
+            # speak pairing code every 60th second
+            with self.counter_lock:
+                if self.count == 0:
+                    self.speak_code()
+                self.count = (self.count + 1) % 6
+
+            if time.monotonic() > self.time_code_expires:
+                # After 20 hours the token times out.  Restart
+                # the pairing process.
+                with self.counter_lock:
+                    self.count = -1
+                self.data = None
+                if self.restart_callback:
+                    self.restart_callback()
+            else:
+                # trigger another check in 10 seconds
+                self.__create_activator()
+        except Exception as e:
+            LOG.debug("Unexpected error: " + repr(e))
+            self.abort_and_restart()
+
+    def end_pairing(self, error_dialog):
+        """Resets the pairing and don't restart it.
+
+        Arguments:
+            error_dialog: Reason for the ending of the pairing process.
+        """
+        self.bus.emit(Message("mycroft.mic.unmute", None))
+        self.data = None
+        self.count = -1
+        if self.end_callback:
+            self.end_callback()
+
+    def abort_and_restart(self, quiet=False):
+        # restart pairing sequence
+        LOG.debug("Aborting Pairing")
+        if self.enclosure:
+            self.enclosure.activate_mouth_events()
+        # Reset state variables for a new pairing session
+        with self.counter_lock:
+            self.count = -1
+        self.activator = None
+        self.data = None  # Clear pairing code info
+        LOG.info("Restarting pairing process")
+        if self.error_callback:
+            self.error_callback(quiet)
+        self.bus.emit(Message("mycroft.not.paired",
+                              data={'quiet': quiet}))
+
+    def __create_activator(self):
+        # Create a timer that will poll the backend in 10 seconds to see
+        # if the user has completed the device registration process
+        with self.activator_lock:
+            if not self.activator_cancelled:
+                self.activator = Timer(PairingSkill.poll_frequency,
+                                       self.check_for_activate)
+                self.activator.daemon = True
+                self.activator.start()
+
+    def speak_code(self):
+        """Speak pairing code."""
+        code = self.data.get("code")
+        LOG.info("Pairing code: " + code)
+        if self.enclosure:
+            self.enclosure.deactivate_mouth_events()
+            self.enclosure.mouth_text(code)
+        if self.code_callback:
+            self.code_callback(code)
+
+
+class PairingSkill(OVOSSkill):
+    poll_frequency = 5  # secs between checking server for activation
+
+    def __init__(self):
+        super(PairingSkill, self).__init__("PairingSkill")
+        self.reload_skill = False
+        self.nato_dict = None
+        self.setup = None
+        self.pairing = None
+        self.mycroft_ready = False
         self.state = SetupState.LOADING
-        self.pairing_mode = PairingMode.HYBRID
+        self.pairing_mode = PairingMode.VOICE
 
     # startup
     def initialize(self):
+        self.setup = SetupManager(self.bus)
+        self.pairing = PairingManager(self.bus, self.enclosure,
+                                      code_callback=self.on_pairing_code,
+                                      success_callback=self.on_pairing_success,
+                                      end_callback=self.on_pairing_end,
+                                      start_callback=self.on_pairing_start,
+                                      restart_callback=self.handle_pairing,
+                                      error_callback=self.on_pairing_error)
+
         self.add_event("mycroft.not.paired", self.not_paired)
         self.add_event("ovos.setup.state", self.handle_get_setup_state)
 
@@ -326,7 +518,7 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.INACTIVE
 
     def handle_wifi_skip(self, message):
-        self.log.info("Offline mode selected, setup will resume on restart")
+        LOG.info("Offline mode selected, setup will resume on restart")
         self.handle_display_manager("OfflineMode")
         self.state = SetupState.INACTIVE
 
@@ -352,7 +544,7 @@ class PairingSkill(OVOSSkill):
             self.bus.emit(Message('mycroft.mic.unmute'))
 
     def handle_intent_aborted(self):
-        self.log.info("killing all dialogs")
+        LOG.info("killing all dialogs")
 
     def not_paired(self, message):
         self.make_active()  # to enable converse
@@ -391,8 +583,44 @@ class PairingSkill(OVOSSkill):
                 self.speak_dialog("already.paired")
             self.state = SetupState.INACTIVE
             self.show_pairing_success()
-        elif not self.data:
+        elif not self.pairing.data:
             self.handle_backend_menu()
+
+    # pairing callbacks
+    def on_pairing_start(self):
+        self.state = SetupState.PAIRING
+        self.show_pairing_start()
+
+        if self.backend_type == BackendType.SELENE:
+            self.speak_dialog("pairing.intro")
+
+    def on_pairing_code(self, code):
+        data = {"code": '. '.join(map(self.nato_dict.get, code)) + '.'}
+        self.show_pairing(code)
+        self.speak_dialog("pairing.code", data)
+
+    def on_pairing_success(self):
+        self.show_pairing_success()
+
+        if self.mycroft_ready:
+            # Tell user they are now paired
+            self.speak_dialog("pairing.paired", wait=True)
+
+        # allow gui page to linger around a bit
+        sleep(5)
+        self.handle_display_manager("LoadingSkills")
+        self.setup.update_device_attributes_on_backend()
+        self.state = SetupState.INACTIVE
+
+    def on_pairing_error(self, quiet):
+        if not quiet:
+            self.speak_dialog("unexpected.error.restarting")
+        self.show_pairing_fail()
+
+    def on_pairing_end(self, error_dialog):
+        if error_dialog:
+            self.speak_dialog(error_dialog)
+        self.state = SetupState.INACTIVE
 
     # Pairing GUI events
     #### Backend selection menu
@@ -414,7 +642,7 @@ class PairingSkill(OVOSSkill):
         sleep(int(wait))
         answer = self.get_response("choose_backend", num_retries=0)
         if answer:
-            self.log.info("ANSWER: " + answer)
+            LOG.info("ANSWER: " + answer)
             if self.voc_match(answer, "no_backend") or self.voc_match(answer, "local_backend"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
                                       {"backend": BackendType.OFFLINE}))
@@ -508,7 +736,9 @@ class PairingSkill(OVOSSkill):
         # selene selected
         self.setup.change_to_selene()
         # continue to normal pairing process
-        self.kickoff_pairing()
+        self.state = SetupState.PAIRING
+        self.selected_backend = BackendType.SELENE
+        self.pairing.kickoff_pairing()
 
     def handle_local_backend_selected(self, message):
         self.handle_display_manager("BackendPersonalHost")
@@ -517,14 +747,18 @@ class PairingSkill(OVOSSkill):
     def handle_personal_backend_url(self, message):
         host = message.data["host_address"]
         self.settings["pairing_url"] = host
+        self.selected_backend = BackendType.PERSONAL
         self.setup.change_to_local_backend(host)
         # continue to normal pairing process
-        self.kickoff_pairing()
+        self.state = SetupState.PAIRING
+        self.pairing.kickoff_pairing()
 
     def handle_no_backend_selected(self, message):
         self.settings["pairing_url"] = ""
+
+        self.selected_backend = BackendType.OFFLINE
         self.setup.change_to_no_backend()
-        self.data = None
+        self.pairing.data = None
         self.handle_stt_menu()
 
     ### STT selection
@@ -612,183 +846,6 @@ class PairingSkill(OVOSSkill):
         self.handle_display_manager("LoadingSkills")
         self.state = SetupState.INACTIVE
 
-    def kickoff_pairing(self):
-        self.state = SetupState.PAIRING
-        self.data = None
-
-        # Kick off pairing...
-        with self.counter_lock:
-            if self.count > -1:
-                # We snuck in to this handler somehow while the pairing
-                # process is still being setup.  Ignore it.
-                self.log.debug("Ignoring call to handle_pairing")
-                return
-            # Not paired or already pairing, so start the process.
-            self.count = 0
-
-        self.log.debug("Kicking off pairing sequence")
-
-        try:
-            # Obtain a pairing code from the backend
-            self.data = self.api.get_code(self.uuid)
-
-            # Keep track of when the code was obtained.  The codes expire
-            # after 20 hours.
-            self.time_code_expires = time.monotonic() + 72000  # 20 hours
-        except Exception:
-            time.sleep(10)
-            # Call restart pairing here
-            # Bail out after Five minutes (5 * 6 attempts at 10 seconds
-            # interval)
-            if self.num_failed_codes < 5 * 6:
-                self.num_failed_codes += 1
-                self.abort_and_restart(quiet=True)
-            else:
-                self.end_pairing('connection.error')
-                self.num_failed_codes = 0
-            return
-
-        self.num_failed_codes = 0  # Reset counter on success
-
-        mycroft.audio.wait_while_speaking()
-
-        self.show_pairing_start()
-
-        if self.backend_type == BackendType.SELENE:
-            self.speak_dialog("pairing.intro")
-
-        # HACK this gives the Mark 1 time to scroll the address and
-        # the user time to browse to the website.
-        # TODO: mouth_text() really should take an optional parameter
-        # to not scroll a second time.
-        time.sleep(7)
-        mycroft.audio.wait_while_speaking()
-
-        if not self.activator:
-            self.__create_activator()
-
-    def check_for_activate(self):
-        """Method is called every 10 seconds by Timer. Checks if user has
-        activated the device yet on home.mycroft.ai and if not repeats
-        the pairing code every 60 seconds.
-        """
-        try:
-            # Attempt to activate.  If the user has completed pairing on the,
-            # backend, this will succeed.  Otherwise it throws and HTTPError()
-
-            token = self.data.get("token")
-            login = self.api.activate(self.uuid, token)  # HTTPError() thrown
-
-            # When we get here, the pairing code has been entered on the
-            # backend and pairing can now be saved.
-            # The following is kinda ugly, but it is really critical that we
-            # get this saved successfully or we need to let the user know that
-            # they have to perform pairing all over again at the website.
-            try:
-                IdentityManager.save(login)
-            except Exception as e:
-                self.log.debug("First save attempt failed: " + repr(e))
-                time.sleep(2)
-                try:
-                    IdentityManager.save(login)
-                except Exception as e2:
-                    # Something must be seriously wrong
-                    self.log.debug("Second save attempt failed: " + repr(e2))
-                    self.abort_and_restart()
-
-            if mycroft.audio.is_speaking():
-                # Assume speaking is the pairing code.  Stop TTS of that.
-                mycroft.audio.stop_speaking()
-
-            self.show_pairing_success()
-            self.bus.emit(Message("mycroft.paired", login))
-
-            if self.mycroft_ready:
-                # Tell user they are now paired
-                self.speak_dialog("pairing.paired", wait=True)
-
-            # Un-mute.  Would have been muted during onboarding for a new
-            # unit, and not dangerous to do if pairing was started
-            # independently.
-            self.bus.emit(Message("mycroft.mic.unmute", None))
-
-            # allow gui page to linger around a bit
-            sleep(5)
-
-            self.handle_display_manager("LoadingSkills")
-
-            self.setup.update_device_attributes_on_backend()
-            self.state = SetupState.INACTIVE
-
-        except HTTPError:
-            # speak pairing code every 60th second
-            with self.counter_lock:
-                if self.count == 0:
-                    self.speak_code()
-                self.count = (self.count + 1) % 6
-
-            if time.monotonic() > self.time_code_expires:
-                # After 20 hours the token times out.  Restart
-                # the pairing process.
-                with self.counter_lock:
-                    self.count = -1
-                self.data = None
-                self.handle_pairing()
-            else:
-                # trigger another check in 10 seconds
-                self.__create_activator()
-        except Exception as e:
-            self.log.debug("Unexpected error: " + repr(e))
-            self.abort_and_restart()
-
-    def end_pairing(self, error_dialog):
-        """Resets the pairing and don't restart it.
-
-        Arguments:
-            error_dialog: Reason for the ending of the pairing process.
-        """
-        self.speak_dialog(error_dialog)
-        self.bus.emit(Message("mycroft.mic.unmute", None))
-
-        self.data = None
-        self.count = -1
-        self.state = SetupState.INACTIVE
-
-    def abort_and_restart(self, quiet=False):
-        # restart pairing sequence
-        self.log.debug("Aborting Pairing")
-        self.enclosure.activate_mouth_events()
-        if not quiet:
-            self.speak_dialog("unexpected.error.restarting")
-
-        # Reset state variables for a new pairing session
-        with self.counter_lock:
-            self.count = -1
-        self.activator = None
-        self.data = None  # Clear pairing code info
-        self.log.info("Restarting pairing process")
-        self.show_pairing_fail()
-        self.bus.emit(Message("mycroft.not.paired",
-                              data={'quiet': quiet}))
-
-    def __create_activator(self):
-        # Create a timer that will poll the backend in 10 seconds to see
-        # if the user has completed the device registration process
-        with self.activator_lock:
-            if not self.activator_cancelled:
-                self.activator = Timer(PairingSkill.poll_frequency,
-                                       self.check_for_activate)
-                self.activator.daemon = True
-                self.activator.start()
-
-    def speak_code(self):
-        """Speak pairing code."""
-        code = self.data.get("code")
-        self.log.info("Pairing code: " + code)
-        data = {"code": '. '.join(map(self.nato_dict.get, code)) + '.'}
-        self.show_pairing(self.data.get("code"))
-        self.speak_dialog("pairing.code", data)
-
     # GUI
     def handle_display_manager(self, state):
         self.gui["state"] = state
@@ -798,17 +855,12 @@ class PairingSkill(OVOSSkill):
             override_animations=True)
 
     def show_pairing_start(self):
-        # Make sure code stays on display
-        self.enclosure.deactivate_mouth_events()
-        self.enclosure.mouth_text(self.settings.get("pairing_url") or "home.mycroft.ai" + "      ")
         self.handle_display_manager("PairingStart")
         # self.gui.show_page("pairing_start.qml", override_idle=True,
         # override_animations=True)
 
     def show_pairing(self, code):
         # self.gui.remove_page("pairing_start.qml")
-        self.enclosure.deactivate_mouth_events()
-        self.enclosure.mouth_text(code)
         # TODO - system theme
         self.gui["txtcolor"] = self.settings.get("color") or "#FF0000"
         self.gui["backendurl"] = self.settings.get("pairing_url") or "home.mycroft.ai"
@@ -818,7 +870,6 @@ class PairingSkill(OVOSSkill):
         # override_animations=True)
 
     def show_pairing_success(self):
-        self.enclosure.activate_mouth_events()  # clears the display
         # self.gui.remove_page("pairing.qml")
         self.gui["status"] = "Success"
         self.gui["label"] = "Device Paired"
@@ -836,12 +887,7 @@ class PairingSkill(OVOSSkill):
         sleep(5)
 
     def shutdown(self):
-        with self.activator_lock:
-            self.activator_cancelled = True
-            if self.activator:
-                self.activator.cancel()
-        if self.activator:
-            self.activator.join()
+        self.pairing.shutdown()
 
 
 def create_skill():
