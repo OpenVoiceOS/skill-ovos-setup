@@ -132,7 +132,7 @@ class PairingSkill(OVOSSkill):
             if self.settings.get('selected_stt') is None:
                 LOG.info(f"Handle STT First Setup")
                 self.bus.once('mycroft.ready', self.handle_stt_menu)
-            elif not self.settings.get('selected_tts') is None:
+            elif self.settings.get('selected_tts') is None:
                 LOG.info(f"Handle TTS First Setup")
                 self.bus.once('mycroft.ready', self.handle_tts_menu)
             self.state = SetupState.INACTIVE
