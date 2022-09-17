@@ -55,6 +55,154 @@ class BackendType(str, Enum):
     SELENE = "selene"
 
 
+class SetupManager:
+    """ helper class to perform setup actions"""
+    def __init__(self, skill):
+        self.skill = skill
+
+    @property
+    def bus(self):
+        return self.skill.bus
+
+    # config handling
+    def update_user_config(self, config):
+        with self.skill.config_lock:
+            conf = LocalConf(USER_CONFIG)
+            conf.merge(config)
+            conf.store()
+            self.bus.emit(Message("configuration.patch",
+                                  {"config": conf}))
+
+    def change_to_mimic(self):
+        self.update_user_config({
+            "tts": {
+                "module": "ovos-tts-plugin-mimic",
+                "ovos-tts-plugin-mimic": {"voice": "ap"}
+            }
+        })
+
+    def change_to_mimic2(self):
+        self.update_user_config({
+            "tts": {
+                "module": "ovos-tts-plugin-mimic2",
+                "ovos-tts-plugin-mimic2": {"voice": "kusal"}
+            }
+        })
+
+    def change_to_larynx(self):
+        self.update_user_config({
+            "tts": {
+                "module": "neon-tts-plugin-larynx-server",
+                "neon-tts-plugin-larynx-server": {
+                    "host": "http://tts.neon.ai",
+                    "voice": "mary_ann",
+                    "vocoder": "hifi_gan/vctk_small"
+                }
+            }
+        })
+
+    def change_to_pico(self):
+        self.update_user_config({
+            "tts": {
+                "module": "ovos-tts-plugin-pico",
+                "ovos-tts-plugin-pico": {}
+            }
+        })
+
+    def change_to_chromium(self):
+        self.update_user_config({
+            "stt": {
+                "module": "ovos-stt-plugin-server",
+                "fallback_module": "ovos-stt-plugin-vosk",
+                # vosk model path not set, small model for lang auto downloaded to XDG directory
+                # en-us already bundled in OVOS image
+                "ovos-stt-plugin-vosk": {},
+                "ovos-stt-plugin-server": {
+                    "url": "https://stt.openvoiceos.com/stt"
+                }
+            }
+        })
+
+    def change_to_vosk(self):
+        self.update_user_config({
+            "stt": {
+                "module": "ovos-stt-plugin-vosk-streaming",
+                "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
+                # vosk model path not set, small model for lang auto downloaded to XDG directory
+                # en-us already bundled in OVOS image
+                "ovos-stt-plugin-vosk": {},
+                "ovos-stt-plugin-vosk-streaming": {}
+            }
+        })
+
+    def change_to_selene(self):
+        config = {
+            "stt": {"module": "ovos-stt-plugin-selene"},
+            "server": {
+                "url": "https://api.mycroft.ai",
+                "version": "v1",
+                "disabled": False
+            },
+            "listener": {
+                "wake_word_upload": {
+                    "url": "https://training.mycroft.ai/precise/upload"
+                }
+            }
+        }
+        self.update_user_config(config)
+        self.skill.selected_backend = BackendType.SELENE
+
+    def change_to_local_backend(self, url="http://0.0.0.0:6712"):
+        config = {
+            "stt": {"module": "ovos-stt-plugin-selene"},
+            "server": {
+                "url": url,
+                "version": "v1",
+                "disabled": False
+            },
+            "listener": {
+                "wake_word_upload": {
+                    "url": f"{url}/precise/upload"
+                }
+            }
+        }
+        self.update_user_config(config)
+        self.skill.selected_backend = BackendType.PERSONAL
+        self.create_dummy_identity()
+
+    def change_to_no_backend(self):
+        config = {
+            "server": {
+                "disabled": True
+            }
+        }
+        self.update_user_config(config)
+        self.skill.selected_backend = BackendType.OFFLINE
+        self.create_dummy_identity()
+
+    # backend actions
+    def create_dummy_identity(self):
+        # create pairing file with dummy data
+        login = {"uuid": self.uuid,
+                 "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
+                 "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
+                 "expires_at": time.time() + 999999}
+        IdentityManager.save(login)
+
+    def update_device_attributes_on_backend(self):
+        """Communicate version information to the backend.
+
+        The backend tracks core version, enclosure version, platform build
+        and platform name for each device, if it is known.
+        """
+        LOG.info('Sending updated device attributes to the backend...')
+        try:
+            api = DeviceApi()
+            api.update_version()
+        except Exception:
+            pass
+
+
 class PairingSkill(OVOSSkill):
     poll_frequency = 5  # secs between checking server for activation
 
@@ -62,6 +210,7 @@ class PairingSkill(OVOSSkill):
         super(PairingSkill, self).__init__("PairingSkill")
         self.reload_skill = False
         self.api = DeviceApi()
+        self.setup = SetupManager(self)
         self.data = None
         self.time_code_expires = None
         self.uuid = str(uuid4())
@@ -127,7 +276,7 @@ class PairingSkill(OVOSSkill):
         else:
             self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
-            self.update_device_attributes_on_backend()
+            self.setup.update_device_attributes_on_backend()
 
     @property
     def backend_type(self):
@@ -245,122 +394,6 @@ class PairingSkill(OVOSSkill):
         elif not self.data:
             self.handle_backend_menu()
 
-    # config handling
-    def update_user_config(self, config):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf.merge(config)
-            conf.store()
-            self.bus.emit(Message("configuration.patch",
-                                  {"config": conf}))
-
-    def change_to_mimic(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic",
-                "ovos-tts-plugin-mimic": {"voice": "ap"}
-            }
-        })
-
-    def change_to_mimic2(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic2",
-                "ovos-tts-plugin-mimic2": {"voice": "kusal"}
-            }
-        })
-
-    def change_to_larynx(self):
-        self.update_user_config({
-            "tts": {
-                "module": "neon-tts-plugin-larynx-server",
-                "neon-tts-plugin-larynx-server": {
-                    "host": "http://tts.neon.ai",
-                    "voice": "mary_ann",
-                    "vocoder": "hifi_gan/vctk_small"
-                }
-            }
-        })
-
-    def change_to_pico(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-pico",
-                "ovos-tts-plugin-pico": {}
-            }
-        })
-
-    def change_to_chromium(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-server",
-                "fallback_module": "ovos-stt-plugin-vosk",
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-server": {
-                    "url": "https://stt.openvoiceos.com/stt"
-                }
-            }
-        })
-
-    def change_to_vosk(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-vosk-streaming",
-                "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-vosk-streaming": {}
-            }
-        })
-
-    def change_to_selene(self):
-        config = {
-            "stt": {"module": "ovos-stt-plugin-selene"},
-            "server": {
-                "url": "https://api.mycroft.ai",
-                "version": "v1",
-                "disabled": False
-            },
-            "listener": {
-                "wake_word_upload": {
-                    "url": "https://training.mycroft.ai/precise/upload"
-                }
-            }
-        }
-        self.update_user_config(config)
-        self.selected_backend = BackendType.SELENE
-
-    def change_to_local_backend(self, url="http://0.0.0.0:6712"):
-        config = {
-            "stt": {"module": "ovos-stt-plugin-selene"},
-            "server": {
-                "url": url,
-                "version": "v1",
-                "disabled": False
-            },
-            "listener": {
-                "wake_word_upload": {
-                    "url": f"{url}/precise/upload"
-                }
-            }
-        }
-        self.update_user_config(config)
-        self.selected_backend = BackendType.PERSONAL
-        self.create_dummy_identity()
-
-    def change_to_no_backend(self):
-        config = {
-            "server": {
-                "disabled": True
-            }
-        }
-        self.update_user_config(config)
-        self.selected_backend = BackendType.OFFLINE
-        self.create_dummy_identity()
-
     # Pairing GUI events
     #### Backend selection menu
     @killable_event(msg="pairing.backend.menu.stop")
@@ -473,7 +506,7 @@ class PairingSkill(OVOSSkill):
     def handle_selene_selected(self, message):
         self.settings["pairing_url"] = "home.mycroft.ai"  # scroll in mk1 faceplate
         # selene selected
-        self.change_to_selene()
+        self.setup.change_to_selene()
         # continue to normal pairing process
         self.kickoff_pairing()
 
@@ -484,13 +517,13 @@ class PairingSkill(OVOSSkill):
     def handle_personal_backend_url(self, message):
         host = message.data["host_address"]
         self.settings["pairing_url"] = host
-        self.change_to_local_backend(host)
+        self.setup.change_to_local_backend(host)
         # continue to normal pairing process
         self.kickoff_pairing()
 
     def handle_no_backend_selected(self, message):
         self.settings["pairing_url"] = ""
-        self.change_to_no_backend()
+        self.setup.change_to_no_backend()
         self.data = None
         self.handle_stt_menu()
 
@@ -526,9 +559,9 @@ class PairingSkill(OVOSSkill):
     def handle_stt_selected(self, message):
         self.selected_stt = message.data["engine"]
         if self.selected_stt == "google":
-            self.change_to_chromium()
+            self.setup.change_to_chromium()
         else:
-            self.change_to_vosk()
+            self.setup.change_to_vosk()
 
         self.send_stop_signal("pairing.stt.menu.stop")
         self.handle_tts_menu()
@@ -567,40 +600,17 @@ class PairingSkill(OVOSSkill):
     def handle_tts_selected(self, message):
         self.selected_tts = message.data["engine"]
         if self.selected_tts == "mimic":
-            self.change_to_mimic()
+            self.setup.change_to_mimic()
         elif self.selected_tts == "mimic2":
-            self.change_to_mimic2()
+            self.setup.change_to_mimic2()
         elif self.selected_tts == "pico":
-            self.change_to_pico()
+            self.setup.change_to_pico()
         elif self.selected_tts == "larynx":
-            self.change_to_larynx()
+            self.setup.change_to_larynx()
 
         self.send_stop_signal("pairing.tts.menu.stop")
         self.handle_display_manager("LoadingSkills")
         self.state = SetupState.INACTIVE
-
-    ## Local backend pairing
-    def create_dummy_identity(self):
-        # create pairing file with dummy data
-        login = {"uuid": self.uuid,
-                 "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
-                 "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
-                 "expires_at": time.time() + 999999}
-        IdentityManager.save(login)
-
-    # selene pairing
-    def update_device_attributes_on_backend(self):
-        """Communicate version information to the backend.
-
-        The backend tracks core version, enclosure version, platform build
-        and platform name for each device, if it is known.
-        """
-        self.log.info('Sending updated device attributes to the backend...')
-        try:
-            api = DeviceApi()
-            api.update_version()
-        except Exception:
-            pass
 
     def kickoff_pairing(self):
         self.state = SetupState.PAIRING
@@ -707,7 +717,7 @@ class PairingSkill(OVOSSkill):
 
             self.handle_display_manager("LoadingSkills")
 
-            self.update_device_attributes_on_backend()
+            self.setup.update_device_attributes_on_backend()
             self.state = SetupState.INACTIVE
 
         except HTTPError:
