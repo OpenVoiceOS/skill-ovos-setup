@@ -206,7 +206,7 @@ class PairingSkill(OVOSSkill):
         self.setup = None
         self.pairing = None
         self.mycroft_ready = False
-        self.state = SetupState.LOADING
+        self._state = SetupState.LOADING
         self.pairing_mode = PairingMode.VOICE
 
     # startup
@@ -221,7 +221,7 @@ class PairingSkill(OVOSSkill):
                                       error_callback=self.on_pairing_error)
 
         self.add_event("mycroft.not.paired", self.not_paired)
-        self.add_event("ovos.setup.state", self.handle_get_setup_state)
+        self.add_event("ovos.setup.state.get", self.handle_get_setup_state)
 
         # events for GUI interaction
         self.gui.register_handler("mycroft.device.set.backend", self.handle_backend_selected_event)
@@ -270,10 +270,10 @@ class PairingSkill(OVOSSkill):
 
     @property
     def backend_type(self):
-        url = self.settings.get("pairing_url", "").split("://")[-1]
+        url = self.settings.get("pairing_url", "").strip()
         if not url:
             return BackendType.OFFLINE
-        if url == "home.mycroft.ai":
+        if url.endswith(".mycroft.ai"):
             return BackendType.SELENE
         return BackendType.PERSONAL
 
@@ -304,8 +304,19 @@ class PairingSkill(OVOSSkill):
         self.settings["selected_tts"] = value
         self.settings.store()
 
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        if value != self._state:
+            self._state = value
+            self.bus.emit(Message("ovos.setup.state", {"state": self._state}))
+
     def handle_get_setup_state(self, message):
-        self.bus.emit(message.response({"state": self.state}))
+        self.bus.emit(message.reply("ovos.setup.state",
+                                    {"state": self.state}))
 
     def handle_wifi_finish(self, message):
         self.handle_display_manager("LoadingScreen")
