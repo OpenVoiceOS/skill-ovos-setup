@@ -384,27 +384,6 @@ class PairingSkill(OVOSSkill):
         self.handle_display_manager("OfflineMode")
         self.state = SetupState.INACTIVE
 
-    def send_stop_signal(self, stop_event=None):
-        # TODO move this one into default OVOSkill class
-        # stop the previous event execution
-        if stop_event:
-            self.bus.emit(Message(stop_event))
-
-        # STT might continue recording and screw up the next get_response
-        self.bus.emit(Message('recognizer_loop:record_stop'))
-        # stop TTS
-        self.bus.emit(Message("mycroft.audio.speech.stop"))
-
-        # special non-ovos handling
-        try:
-            from mycroft.version import OVOS_VERSION_STR
-        except ImportError:
-            # NOTE: mycroft does not have an event to stop recording
-            # this attempts to force a stop
-            self.bus.emit(Message('mycroft.mic.mute'))
-            sleep(1.5)  # the silence from muting should make STT stop recording
-            self.bus.emit(Message('mycroft.mic.unmute'))
-
     def handle_intent_aborted(self):
         LOG.info("killing all dialogs")
 
