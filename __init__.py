@@ -622,9 +622,11 @@ class PairingSkill(OVOSSkill):
         options = ["online with google", "offline with vosk"]
         ans = self.ask_selection(options, min_conf=0.35)
         if ans and self.ask_yesno("confirm_stt", {"stt": ans}) == "yes":
+            # TODO - map this to online/offline and OPM reported engines
+            #  do not hardcode "google" and "vosk"
             if "google" in ans or "online" in ans:
                 ans = "google"
-            elif "vosk" in ans or "offline" in ans:
+            else:
                 ans = "vosk"
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.stt",
                                   {"engine": ans}))
@@ -662,6 +664,8 @@ class PairingSkill(OVOSSkill):
         options = ["online male", "offline male", "offline female", "online female"]
         ans = self.ask_selection(options, min_conf=0.35)
         if ans and self.ask_yesno("confirm_tts", {"tts": ans}) == "yes":
+            # TODO - map this to online/offline male/female and OPM reported engines
+            #  do not hardcode "mimic",  "mimic2", "pico", "larynx"
             tts = "mimic2"
             if ans == "offline male":
                 tts = "mimic"
