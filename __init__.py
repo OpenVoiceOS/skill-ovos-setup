@@ -11,11 +11,10 @@
 # limitations under the License.
 #
 import time
-from threading import Timer, Lock
+from threading import Lock
 from time import sleep
 from uuid import uuid4
 
-import mycroft.audio
 from adapt.intent import IntentBuilder
 from mycroft.api import DeviceApi, is_paired, check_remote_pairing
 from mycroft.configuration import LocalConf, USER_CONFIG
@@ -532,6 +531,7 @@ class PairingSkill(OVOSSkill):
 
     def handle_selene_selected(self, message):
         self.pairing.pairing_url = self.settings["pairing_url"] = "home.mycroft.ai"  # scroll in mk1 faceplate
+        self.pairing.set_api_url("api.mycroft.ai")
         # selene selected
         self.setup.change_to_selene()
         # continue to normal pairing process
@@ -546,6 +546,7 @@ class PairingSkill(OVOSSkill):
     def handle_personal_backend_url(self, message):
         host = message.data["host_address"]
         self.pairing.pairing_url = self.settings["pairing_url"] = host
+        self.pairing.set_api_url(host)
         self.selected_backend = BackendType.PERSONAL
         self.setup.change_to_local_backend(host)
         # continue to normal pairing process
