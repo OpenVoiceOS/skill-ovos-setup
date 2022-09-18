@@ -11,6 +11,7 @@
 # limitations under the License.
 #
 import time
+from enum import Enum
 from threading import Lock
 from time import sleep
 from uuid import uuid4
@@ -21,13 +22,12 @@ from mycroft.configuration import LocalConf, USER_CONFIG
 from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
-from ovos_workshop.skills import OVOSSkill
-from ovos_workshop.decorators import killable_event
-from selene_api.pairing import PairingManager
-from ovos_utils.network_utils import is_connected
-from ovos_utils.gui import can_use_gui, can_use_local_gui
+from ovos_utils.gui import can_use_gui
 from ovos_utils.log import LOG
-from enum import Enum
+from ovos_utils.network_utils import is_connected
+from ovos_workshop.decorators import killable_event
+from ovos_workshop.skills import OVOSSkill
+from selene_api.pairing import PairingManager
 
 
 class SetupState(str, Enum):
@@ -55,9 +55,70 @@ class BackendType(str, Enum):
 
 class SetupManager:
     """ helper class to perform setup actions"""
+
     def __init__(self, bus):
         self.bus = bus
         self.config_lock = Lock()
+        self._offline_male = {
+            "module": "ovos-tts-plugin-mimic",
+            "ovos-tts-plugin-mimic": {"voice": "ap"}
+        }
+        self._online_male = {
+            "module": "ovos-tts-plugin-mimic2",
+            "ovos-tts-plugin-mimic2": {"voice": "kusal"}
+        }
+        self._offline_female = {
+            "module": "ovos-tts-plugin-pico",
+            "ovos-tts-plugin-pico": {}
+        }
+        self._online_female = {
+            "module": "neon-tts-plugin-larynx-server",
+            "neon-tts-plugin-larynx-server": {
+                "voice": "mary_ann",
+                "vocoder": "hifi_gan/vctk_small"
+            }
+        }
+        self._online_stt = {
+            "module": "ovos-stt-plugin-server",
+            "fallback_module": "ovos-stt-plugin-vosk",
+            # vosk model path not set, small model for lang auto downloaded to XDG directory
+            # en-us already bundled in OVOS image
+            "ovos-stt-plugin-vosk": {},
+            "ovos-stt-plugin-server": {
+                "url": "https://stt.openvoiceos.com/stt"
+            }
+        }
+        self._offline_stt = {
+            "module": "ovos-stt-plugin-vosk-streaming",
+            "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
+            # vosk model path not set, small model for lang auto downloaded to XDG directory
+            # en-us already bundled in OVOS image
+            "ovos-stt-plugin-vosk": {},
+            "ovos-stt-plugin-vosk-streaming": {}
+        }
+
+    # options configuration
+    def set_offline_stt_opt(self, module, config, fallback_module="", fallback_config=None):
+        self._offline_stt = {"module": module, "fallback_module": fallback_module, module: config}
+        if fallback_module:
+            self._offline_stt[fallback_module] = fallback_config or {}
+
+    def set_online_stt_opt(self, module, config, fallback_module="", fallback_config=None):
+        self._online_stt = {"module": module, "fallback_module": fallback_module, module: config}
+        if fallback_module:
+            self._online_stt[fallback_module] = fallback_config or {}
+
+    def set_offline_male_opt(self, module, config):
+        self._offline_male = {"module": module, module: config}
+
+    def set_offline_female_opt(self, module, config):
+        self._offline_female = {"module": module, module: config}
+
+    def set_online_male_opt(self, module, config):
+        self._online_male = {"module": module, module: config}
+
+    def set_online_female_opt(self, module, config):
+        self._online_female = {"module": module, module: config}
 
     # config handling
     def update_user_config(self, config):
@@ -68,67 +129,23 @@ class SetupManager:
             self.bus.emit(Message("configuration.patch",
                                   {"config": conf}))
 
-    def change_to_mimic(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic",
-                "ovos-tts-plugin-mimic": {"voice": "ap"}
-            }
-        })
+    def change_to_offline_male(self):
+        self.update_user_config({"tts": self._offline_male})
 
-    def change_to_mimic2(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-mimic2",
-                "ovos-tts-plugin-mimic2": {"voice": "kusal"}
-            }
-        })
+    def change_to_online_male(self):
+        self.update_user_config({"tts": self._online_male})
 
-    def change_to_larynx(self):
-        self.update_user_config({
-            "tts": {
-                "module": "neon-tts-plugin-larynx-server",
-                "neon-tts-plugin-larynx-server": {
-                    "host": "http://tts.neon.ai",
-                    "voice": "mary_ann",
-                    "vocoder": "hifi_gan/vctk_small"
-                }
-            }
-        })
+    def change_to_online_female(self):
+        self.update_user_config({"tts": self._online_female})
 
-    def change_to_pico(self):
-        self.update_user_config({
-            "tts": {
-                "module": "ovos-tts-plugin-pico",
-                "ovos-tts-plugin-pico": {}
-            }
-        })
+    def change_to_offline_female(self):
+        self.update_user_config({"tts": self._offline_female})
 
-    def change_to_chromium(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-server",
-                "fallback_module": "ovos-stt-plugin-vosk",
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-server": {
-                    "url": "https://stt.openvoiceos.com/stt"
-                }
-            }
-        })
+    def change_to_online_stt(self):
+        self.update_user_config({"stt": self._online_stt})
 
-    def change_to_vosk(self):
-        self.update_user_config({
-            "stt": {
-                "module": "ovos-stt-plugin-vosk-streaming",
-                "fallback_module": "",  # disable fallback STT to avoid loading vosk twice
-                # vosk model path not set, small model for lang auto downloaded to XDG directory
-                # en-us already bundled in OVOS image
-                "ovos-stt-plugin-vosk": {},
-                "ovos-stt-plugin-vosk-streaming": {}
-            }
-        })
+    def change_to_offline_stt(self):
+        self.update_user_config({"stt": self._offline_stt})
 
     def change_to_selene(self):
         config = {
@@ -211,7 +228,6 @@ class PairingSkill(OVOSSkill):
 
     # startup
     def initialize(self):
-        self.setup = SetupManager(self.bus)
         self.pairing = PairingManager(self.bus, self.enclosure,
                                       code_callback=self.on_pairing_code,
                                       success_callback=self.on_pairing_success,
@@ -219,6 +235,7 @@ class PairingSkill(OVOSSkill):
                                       start_callback=self.on_pairing_start,
                                       restart_callback=self.handle_pairing,
                                       error_callback=self.on_pairing_error)
+        self._init_setup_options()
 
         self.add_event("mycroft.not.paired", self.not_paired)
         self.add_event("ovos.setup.state.get", self.handle_get_setup_state)
@@ -232,6 +249,42 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.handle_tts_selected)
         self.nato_dict = self.translate_namedvalues('codes')
 
+        self._init_state()
+
+    def _init_setup_options(self):
+        self.setup = SetupManager(self.bus)
+        # read default values for voice interaction from settings
+        # this allows images to change these by placing a json file in XDG location
+        if self.settings.get("offline_stt"):
+            engine = self.settings.get("offline_stt")
+            fallback = self.settings.get("offline_fallback_stt")
+            cfg = self.settings.get("offline_stt_cfg")
+            fallback_cfg = self.settings.get("offline_fallback_stt_cfg")
+            self.setup.set_offline_stt_opt(engine, fallback, cfg, fallback_cfg)
+        if self.settings.get("online_stt"):
+            engine = self.settings.get("online_stt")
+            fallback = self.settings.get("online_fallback_stt")
+            cfg = self.settings.get("online_stt_cfg")
+            fallback_cfg = self.settings.get("online_fallback_stt_cfg")
+            self.setup.set_online_stt_opt(engine, fallback, cfg, fallback_cfg)
+        if self.settings.get("online_male"):
+            engine = self.settings.get("online_male")
+            cfg = self.settings.get("online_male_cfg")
+            self.setup.set_online_male_opt(engine, cfg)
+        if self.settings.get("online_female"):
+            engine = self.settings.get("online_female")
+            cfg = self.settings.get("online_female_cfg")
+            self.setup.set_online_female_opt(engine, cfg)
+        if self.settings.get("offline_male"):
+            engine = self.settings.get("offline_male")
+            cfg = self.settings.get("offline_male_cfg")
+            self.setup.set_offline_male_opt(engine, cfg)
+        if self.settings.get("offline_female"):
+            engine = self.settings.get("offline_female")
+            cfg = self.settings.get("offline_female_cfg")
+            self.setup.set_offline_female_opt(engine, cfg)
+
+    def _init_state(self):
         if not can_use_gui(self.bus):
             # ask for options in a loop
             self.pairing_mode = PairingMode.VOICE
@@ -602,10 +655,12 @@ class PairingSkill(OVOSSkill):
 
     def handle_stt_selected(self, message):
         self.selected_stt = message.data["engine"]
+        # TODO - map this to online/offline and OPM reported engines
+        #  do not hardcode "google"
         if self.selected_stt == "google":
-            self.setup.change_to_chromium()
+            self.setup.change_to_online_stt()
         else:
-            self.setup.change_to_vosk()
+            self.setup.change_to_offline_stt()
 
         self.send_stop_signal("pairing.stt.menu.stop")
         self.handle_tts_menu()
@@ -643,14 +698,17 @@ class PairingSkill(OVOSSkill):
 
     def handle_tts_selected(self, message):
         self.selected_tts = message.data["engine"]
+
+        # TODO - map this to online/offline male/female and OPM reported engines
+        #  do not hardcode "mimic",  "mimic2", "pico", "larynx"
         if self.selected_tts == "mimic":
-            self.setup.change_to_mimic()
+            self.setup.change_to_offline_male()
         elif self.selected_tts == "mimic2":
-            self.setup.change_to_mimic2()
+            self.setup.change_to_online_male()
         elif self.selected_tts == "pico":
-            self.setup.change_to_pico()
+            self.setup.change_to_offline_female()
         elif self.selected_tts == "larynx":
-            self.setup.change_to_larynx()
+            self.setup.change_to_online_female()
 
         self.send_stop_signal("pairing.tts.menu.stop")
         self.handle_display_manager("LoadingSkills")
