@@ -4,3 +4,4 @@ neon-tts-plugin-larynx-server
 ovos-tts-plugin-mimic
 ovos-tts-plugin-mimic2
 ovos-stt-plugin-selene
+selene_api>=0.0.3a1
