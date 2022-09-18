@@ -176,7 +176,7 @@ class SetupManager:
     @staticmethod
     def create_dummy_identity():
         # create pairing file with dummy data
-        login = {"uuid": uuid4(),
+        login = {"uuid": str(uuid4()),
                  "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
                  "refresh": "OVOS66c5SpAiSpXbpHlq9HNGl1vsw_srX49t5tCv88JkhuE=",
                  "expires_at": time.time() + 999999}
