@@ -174,10 +174,10 @@ class PairingSkill(OVOSSkill):
         if not is_paired() or not self.selected_backend:
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(message.forward("mycroft.not.paired"))
-        elif self.settings.get('selected_stt') is None:
+        elif self.selected_stt is None:
             LOG.info(f"Handle STT First Setup")
             self.handle_stt_menu()
-        elif not self.settings.get('selected_tts') is None:
+        elif self.selected_tts is None:
             LOG.info(f"Handle TTS First Setup")
             self.handle_tts_menu()
         else:
@@ -186,6 +186,8 @@ class PairingSkill(OVOSSkill):
     def handle_wifi_skip(self, message):
         self.log.info("Offline mode selected, setup will resume on restart")
         self.handle_display_manager("OfflineMode")
+        self.selected_tts = ''
+        self.selected_stt = ''
         self.state = SetupState.INACTIVE
 
     def send_stop_signal(self, stop_event=None, should_sleep=True):
