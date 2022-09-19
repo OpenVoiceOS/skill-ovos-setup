@@ -129,13 +129,13 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
-            if self.settings.get('selected_stt') is None:
+            self.state = SetupState.INACTIVE
+            if self.selected_stt is None:
                 LOG.info(f"Handle STT First Setup")
                 self.bus.once('mycroft.ready', self.handle_stt_menu)
-            elif self.settings.get('selected_tts') is None:
+            elif self.selected_tts is None:
                 LOG.info(f"Handle TTS First Setup")
                 self.bus.once('mycroft.ready', self.handle_tts_menu)
-            self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
             self.update_device_attributes_on_backend()
 
