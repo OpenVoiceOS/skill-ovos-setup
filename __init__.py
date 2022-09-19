@@ -414,7 +414,7 @@ class PairingSkill(OVOSSkill):
         return False
 
     @intent_handler(IntentBuilder("PairingIntent")
-                    .require("PairingKeyword").require("DeviceKeyword"))
+                    .require("pairing").require("device"))
     def handle_pairing(self, message=None):
         self.state = SetupState.SELECTING_BACKEND
 
@@ -488,7 +488,7 @@ class PairingSkill(OVOSSkill):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
                                       {"backend": BackendType.OFFLINE}))
                 return
-            elif self.voc_match(answer, "selene"):
+            elif self.voc_match(answer, "selene_backend"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
                                       {"backend": BackendType.SELENE}))
                 return
