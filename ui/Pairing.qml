@@ -25,7 +25,6 @@ import Mycroft 1.0 as Mycroft
 Item {
     id: root
     property var code: sessionData.code
-    property var txtcolor: sessionData.txtcolor
     property var backendurl: "account.mycroft.ai/pair"
     anchors.fill: parent
     property bool horizontalMode: root.width > root.height ? 1 :0

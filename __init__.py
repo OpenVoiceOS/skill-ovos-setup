@@ -717,8 +717,6 @@ class PairingSkill(OVOSSkill):
 
     def show_pairing(self, code):
         # self.gui.remove_page("pairing_start.qml")
-        # TODO - system theme
-        self.gui["txtcolor"] = self.settings.get("color") or "#FF0000"
         self.gui["backendurl"] = self.settings.get("pairing_url") or "home.mycroft.ai"
         self.gui["code"] = code
         self.handle_display_manager("Pairing")
