@@ -18,7 +18,6 @@ from uuid import uuid4
 
 from adapt.intent import IntentBuilder
 from mycroft.api import DeviceApi, is_paired, check_remote_pairing
-from mycroft.configuration import LocalConf, USER_CONFIG
 from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
@@ -28,6 +27,7 @@ from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
 from ovos_workshop.skills import OVOSSkill
 from selene_api.pairing import PairingManager
+from ovos_config.config import update_mycroft_config
 
 
 class SetupState(str, Enum):
@@ -121,31 +121,29 @@ class SetupManager:
         self._online_female = {"module": module, module: config}
 
     # config handling
-    def update_user_config(self, config):
-        with self.config_lock:
-            conf = LocalConf(USER_CONFIG)
-            conf.merge(config)
-            conf.store()
-            self.bus.emit(Message("configuration.patch",
-                                  {"config": conf}))
-
     def change_to_offline_male(self):
-        self.update_user_config({"tts": self._offline_male})
+        update_mycroft_config({"tts": self._offline_male},
+                              bus=self.bus)
 
     def change_to_online_male(self):
-        self.update_user_config({"tts": self._online_male})
+        update_mycroft_config({"tts": self._online_male},
+                              bus=self.bus)
 
     def change_to_online_female(self):
-        self.update_user_config({"tts": self._online_female})
+        update_mycroft_config({"tts": self._online_female},
+                              bus=self.bus)
 
     def change_to_offline_female(self):
-        self.update_user_config({"tts": self._offline_female})
+        update_mycroft_config({"tts": self._offline_female},
+                              bus=self.bus)
 
     def change_to_online_stt(self):
-        self.update_user_config({"stt": self._online_stt})
+        update_mycroft_config({"stt": self._online_stt},
+                              bus=self.bus)
 
     def change_to_offline_stt(self):
-        self.update_user_config({"stt": self._offline_stt})
+        update_mycroft_config({"stt": self._offline_stt},
+                              bus=self.bus)
 
     def change_to_selene(self):
         config = {
@@ -161,7 +159,7 @@ class SetupManager:
                 }
             }
         }
-        self.update_user_config(config)
+        update_mycroft_config(config, bus=self.bus)
 
     def change_to_local_backend(self, url="http://0.0.0.0:6712"):
         config = {
@@ -177,7 +175,7 @@ class SetupManager:
                 }
             }
         }
-        self.update_user_config(config)
+        update_mycroft_config(config, bus=self.bus)
         self.create_dummy_identity()
 
     def change_to_no_backend(self):
@@ -186,12 +184,14 @@ class SetupManager:
                 "disabled": True
             }
         }
-        self.update_user_config(config)
+        update_mycroft_config(config, bus=self.bus)
         self.create_dummy_identity()
 
     # backend actions
     @staticmethod
     def create_dummy_identity():
+        # TODO - long term we want to remove this
+        #  for now 3rd party code expects this to exist to check for pairing
         # create pairing file with dummy data
         login = {"uuid": str(uuid4()),
                  "access": "OVOSdbF1wJ4jA5lN6x6qmVk_QvJPqBQZTUJQm7fYzkDyY_Y=",
