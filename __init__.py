@@ -97,6 +97,14 @@ class SetupManager:
             "ovos-stt-plugin-vosk-streaming": {}
         }
 
+    @property
+    def offline_stt_module(self):
+        return self._offline_stt.get("module") or "ovos-stt-plugin-vosk",
+
+    @property
+    def online_stt_module(self):
+        return self._online_stt.get("module") or "ovos-stt-plugin-server",
+
     # options configuration
     def set_offline_stt_opt(self, module, config, fallback_module="", fallback_config=None):
         self._offline_stt = {"module": module, "fallback_module": fallback_module, module: config}
@@ -613,6 +621,8 @@ class PairingSkill(OVOSSkill):
                     callback=handle_intent_aborted)
     def handle_stt_menu(self):
         self.state = SetupState.SELECTING_STT
+        self.gui["offlineSTT"] = self.setup.offline_stt_module
+        self.gui["onlineSTT"] = self.setup.online_stt_module
         self.handle_display_manager("BackendLocalSTT")
         self.send_stop_signal("pairing.confirmation.stop")
         self.speak_dialog("stt_intro")
@@ -624,26 +634,20 @@ class PairingSkill(OVOSSkill):
     def _stt_menu_voice(self):
         self.speak_dialog("select_stt")
         # TODO - get from .voc for lang support
-        options = ["online with google", "offline with vosk"]
+        options = ["online", "offline"]
         ans = self.ask_selection(options, min_conf=0.35)
         if ans and self.ask_yesno("confirm_stt", {"stt": ans}) == "yes":
-            # TODO - map this to online/offline and OPM reported engines
-            #  do not hardcode "google" and "vosk"
-            if "google" in ans or "online" in ans:
-                ans = "google"
-            else:
-                ans = "vosk"
+            engine = self.setup.online_stt_module \
+                if "online" in ans else self.setup.offline_stt_module
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.stt",
-                                  {"engine": ans}))
+                                  {"engine": engine}))
         else:
             self.speak_dialog("choice_failed")
             self._stt_menu_voice()
 
     def handle_stt_selected(self, message):
         self.selected_stt = message.data["engine"]
-        # TODO - map this to online/offline and OPM reported engines
-        #  do not hardcode "google"
-        if self.selected_stt == "google":
+        if self.selected_stt == self.setup.online_stt_module:
             self.setup.change_to_online_stt()
         else:
             self.setup.change_to_offline_stt()

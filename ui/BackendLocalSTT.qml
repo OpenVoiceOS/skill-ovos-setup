@@ -25,6 +25,8 @@ import Mycroft 1.0 as Mycroft
 Item {
     id: backendView
     anchors.fill: parent
+    property var offlineSTT: sessionData.offlineSTT
+    property var onlineSTT: sessionData.onlineSTT
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
     Rectangle {
@@ -105,12 +107,12 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text: "Google STT"
+                            text:  "Online STT - " + root.onlineSTT
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.confirm.stt", {"engine": "google"})
+                            triggerGuiEvent("mycroft.device.confirm.stt", {"engine": root.onlineSTT})
                         }
                     }
 
@@ -146,13 +148,13 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text: "Vosk STT"
+                            text: "Offline STT - " + root.offlineSTT
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.confirm.stt",
-                            {"engine": "vosk"})
+                            {"engine": root.offlineSTT})
                         }
                     }
                 }
