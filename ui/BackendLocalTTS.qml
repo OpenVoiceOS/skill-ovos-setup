@@ -24,6 +24,11 @@ import Mycroft 1.0 as Mycroft
 
 Item {
     id: backendView
+    property var offlineMale: sessionData.offlineMale
+    property var onlineMale: sessionData.onlineMale
+    property var offlineFemale: sessionData.offlineFemale
+    property var onlineFemale: sessionData.onlineFemale
+
     anchors.fill: parent
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
@@ -103,12 +108,12 @@ Item {
                             elide: Text.ElideRight
                             level: 3
                             color: Kirigami.Theme.textColor
-                            text: "Mimic2 (online male)"
+                            text: "Online Male - " + backendView.onlineMale
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic2"})
+                            triggerGuiEvent("mycroft.device.confirm.tts", {"engine": backendView.onlineMale})
                         }
                     }
 
@@ -142,13 +147,13 @@ Item {
                             elide: Text.ElideRight
                             level: 3
                             color: Kirigami.Theme.textColor
-                            text: "Larynx (online female)"
+                            text: "Online Female - " + backendView.onlineFemale
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.confirm.tts",
-                            {"engine": "larynx"})
+                            {"engine": backendView.onlineFemale})
                         }
                     }
 
@@ -182,12 +187,13 @@ Item {
                             elide: Text.ElideRight
                             level: 3
                             color: Kirigami.Theme.textColor
-                            text: "Mimic (offline male)"
+                            text: "Offline Male - " + backendView.offlineMale
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.confirm.tts", {"engine": "mimic"})
+                            triggerGuiEvent("mycroft.device.confirm.tts",
+                            {"engine": backendView.offlineMale})
                         }
                     }
                     Button {
@@ -220,13 +226,13 @@ Item {
                             elide: Text.ElideRight
                             level: 3
                             color: Kirigami.Theme.textColor
-                            text: "Pico (offline female)"
+                            text: "Offline Female - " + backendView.offlineFemale
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.confirm.tts",
-                            {"engine": "pico"})
+                            {"engine": backendView.offlineFemale})
                         }
                     }
                 }

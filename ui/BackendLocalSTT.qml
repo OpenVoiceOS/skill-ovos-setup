@@ -107,12 +107,12 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text:  "Online STT - " + root.onlineSTT
+                            text:  "Online STT - " + backendView.onlineSTT
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.confirm.stt", {"engine": root.onlineSTT})
+                            triggerGuiEvent("mycroft.device.confirm.stt", {"engine": backendView.onlineSTT})
                         }
                     }
 
@@ -148,13 +148,13 @@ Item {
                             fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
                             minimumPixelSize: 8
                             font.pixelSize: 32
-                            text: "Offline STT - " + root.offlineSTT
+                            text: "Offline STT - " + backendView.offlineSTT
                         }
 
                         onClicked: {
                             Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                             triggerGuiEvent("mycroft.device.confirm.stt",
-                            {"engine": root.offlineSTT})
+                            {"engine": backendView.offlineSTT})
                         }
                     }
                 }

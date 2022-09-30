@@ -99,11 +99,28 @@ class SetupManager:
 
     @property
     def offline_stt_module(self):
-        return self._offline_stt.get("module") or "ovos-stt-plugin-vosk",
+        return self._offline_stt.get("module") or "ovos-stt-plugin-vosk"
 
     @property
     def online_stt_module(self):
-        return self._online_stt.get("module") or "ovos-stt-plugin-server",
+        return self._online_stt.get("module") or "ovos-stt-plugin-server"
+
+    @property
+    def online_male_tts_module(self):
+        return self._online_male.get("module") or "ovos-tts-plugin-mimic2"
+
+    @property
+    def online_female_tts_module(self):
+        return self._online_female.get("module") or "neon-tts-plugin-larynx-server"
+
+    @property
+    def offline_male_tts_module(self):
+        return self._offline_male.get("module") or "ovos-tts-plugin-mimic"
+
+    @property
+    def offline_female_tts_module(self):
+        return self._offline_female.get("module") or "ovos-tts-plugin-pico"
+
 
     # options configuration
     def set_offline_stt_opt(self, module, config, fallback_module="", fallback_config=None):
@@ -660,6 +677,10 @@ class PairingSkill(OVOSSkill):
                     callback=handle_intent_aborted)
     def handle_tts_menu(self):
         self.state = SetupState.SELECTING_TTS
+        self.gui["offlineMale"] = self.setup.offline_male_tts_module
+        self.gui["onlineMale"] = self.setup.online_male_tts_module
+        self.gui["offlineFemale"] = self.setup.offline_female_tts_module
+        self.gui["onlineFemale"] = self.setup.online_female_tts_module
         self.handle_display_manager("BackendLocalTTS")
         self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts_intro")
@@ -673,15 +694,13 @@ class PairingSkill(OVOSSkill):
         options = ["online male", "offline male", "offline female", "online female"]
         ans = self.ask_selection(options, min_conf=0.35)
         if ans and self.ask_yesno("confirm_tts", {"tts": ans}) == "yes":
-            # TODO - map this to online/offline male/female and OPM reported engines
-            #  do not hardcode "mimic",  "mimic2", "pico", "larynx"
-            tts = "mimic2"
+            tts = self.setup.online_male_tts_module
             if ans == "offline male":
-                tts = "mimic"
+                tts = self.setup.offline_male_tts_module
             if ans == "online female":
-                tts = "larynx"
+                tts = self.setup.online_female_tts_module
             if ans == "offline female":
-                tts = "pico"
+                tts = self.setup.offline_female_tts_module
             self.bus.emit(Message(f'{self.skill_id}.mycroft.device.confirm.tts',
                                   {"engine": tts}))
         else:
@@ -690,16 +709,13 @@ class PairingSkill(OVOSSkill):
 
     def handle_tts_selected(self, message):
         self.selected_tts = message.data["engine"]
-
-        # TODO - map this to online/offline male/female and OPM reported engines
-        #  do not hardcode "mimic",  "mimic2", "pico", "larynx"
-        if self.selected_tts == "mimic":
+        if self.selected_tts == self.setup.offline_male_tts_module:
             self.setup.change_to_offline_male()
-        elif self.selected_tts == "mimic2":
+        elif self.selected_tts == self.setup.online_male_tts_module:
             self.setup.change_to_online_male()
-        elif self.selected_tts == "pico":
+        elif self.selected_tts == self.setup.offline_female_tts_module:
             self.setup.change_to_offline_female()
-        elif self.selected_tts == "larynx":
+        elif self.selected_tts == self.setup.online_female_tts_module:
             self.setup.change_to_online_female()
 
         self.send_stop_signal("pairing.tts.menu.stop")
