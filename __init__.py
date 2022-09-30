@@ -43,7 +43,6 @@ class SetupState(str, Enum):
 class PairingMode(str, Enum):
     VOICE = "voice"  # voice only
     GUI = "gui"  # gui - click buttons
-    HYBRID = "hybrid"  # gui but no input capabilities - select with voice
 
 
 class BackendType(str, Enum):
@@ -311,13 +310,8 @@ class PairingSkill(OVOSSkill):
         if not can_use_gui(self.bus):
             # ask for options in a loop
             self.pairing_mode = PairingMode.VOICE
-        # TODO - add keynav support to GUI, allow using a keyboard for all steps
-        # this removes the need for Hybrid mode and makes the skill simpler
-        # elif can_use_local_gui() and can_use_touch_mouse():
-        #    # display gui + skip the annoying voice prompts loop
-        #    self.pairing_mode = PairingMode.GUI
         else:
-            # display gui + ask for options in a loop
+            # display gui with minimal dialog
             self.pairing_mode = PairingMode.GUI
 
         # uncomment this line for debugging
