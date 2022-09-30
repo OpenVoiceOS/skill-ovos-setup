@@ -12,7 +12,6 @@
 #
 import time
 from enum import Enum
-from threading import Lock
 from time import sleep
 from uuid import uuid4
 
@@ -58,7 +57,6 @@ class SetupManager:
 
     def __init__(self, bus):
         self.bus = bus
-        self.config_lock = Lock()
         self._offline_male = {
             "module": "ovos-tts-plugin-mimic",
             "ovos-tts-plugin-mimic": {"voice": "ap"}
