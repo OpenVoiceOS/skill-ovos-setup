@@ -26,6 +26,7 @@ from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
 from ovos_workshop.skills import OVOSSkill
 from selene_api.pairing import PairingManager
+from selene_api.api import BackendType, get_backend_type
 from ovos_config.config import update_mycroft_config
 
 
@@ -43,12 +44,6 @@ class SetupState(str, Enum):
 class PairingMode(str, Enum):
     VOICE = "voice"  # voice only
     GUI = "gui"  # gui - click buttons
-
-
-class BackendType(str, Enum):
-    OFFLINE = "offline"
-    PERSONAL = "personal"
-    SELENE = "selene"
 
 
 class SetupManager:
@@ -317,9 +312,10 @@ class PairingSkill(OVOSSkill):
             # display gui with minimal dialog
             self.pairing_mode = PairingMode.GUI
 
+        self.first_setup = self.settings.get("first_setup", True)
         # uncomment this line for debugging
         # will always trigger setup on boot
-        self.selected_backend = None
+        # self.first_setup = True
 
         if not is_connected():
             self.state = SetupState.SELECTING_WIFI
@@ -328,7 +324,7 @@ class PairingSkill(OVOSSkill):
                           self.handle_wifi_finish)
             self.bus.once("ovos.phal.wifi.plugin.skip.setup",
                           self.handle_wifi_skip)
-        elif not self.selected_backend:
+        elif self.first_setup:
             self.state = SetupState.FIRST_BOOT
             self.make_active()  # to enable converse
             self.bus.emit(Message("mycroft.not.paired"))
@@ -343,12 +339,7 @@ class PairingSkill(OVOSSkill):
 
     @property
     def backend_type(self):
-        url = self.settings.get("pairing_url", "").strip()
-        if not url:
-            return BackendType.OFFLINE
-        if url.endswith(".mycroft.ai"):
-            return BackendType.SELENE
-        return BackendType.PERSONAL
+        return get_backend_type(self.config_core)
 
     @property
     def selected_backend(self):
@@ -393,7 +384,7 @@ class PairingSkill(OVOSSkill):
 
     def handle_wifi_finish(self, message):
         self.handle_display_manager("LoadingScreen")
-        if not is_paired() or not self.selected_backend:
+        if not is_paired() or self.first_setup:
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(message.forward("mycroft.not.paired"))
         else:
@@ -438,7 +429,7 @@ class PairingSkill(OVOSSkill):
     def handle_pairing(self, message=None):
         self.state = SetupState.SELECTING_BACKEND
 
-        if self.selected_backend and check_remote_pairing(ignore_errors=True):
+        if self.backend_type != BackendType.OFFLINE and check_remote_pairing(ignore_errors=True):
             # Already paired!
             if message:  # intent
                 self.speak_dialog("already_paired")
@@ -472,6 +463,7 @@ class PairingSkill(OVOSSkill):
         self.handle_display_manager("LoadingSkills")
         self.setup.update_device_attributes_on_backend()
         self.state = SetupState.INACTIVE
+        self.settings["first_setup"] = False
 
     def on_pairing_error(self, quiet):
         if not quiet:
@@ -604,7 +596,6 @@ class PairingSkill(OVOSSkill):
         self.setup.change_to_selene()
         # continue to normal pairing process
         self.state = SetupState.PAIRING
-        self.selected_backend = BackendType.SELENE
         self.pairing.kickoff_pairing()
 
     def handle_local_backend_selected(self, message):
@@ -615,7 +606,6 @@ class PairingSkill(OVOSSkill):
         host = message.data["host_address"]
         self.pairing.pairing_url = self.settings["pairing_url"] = host
         self.pairing.set_api_url(host)
-        self.selected_backend = BackendType.PERSONAL
         self.setup.change_to_local_backend(host)
         # continue to normal pairing process
         self.state = SetupState.PAIRING
@@ -624,7 +614,6 @@ class PairingSkill(OVOSSkill):
     def handle_no_backend_selected(self, message):
         self.pairing.pairing_url = self.settings["pairing_url"] = ""
         self.pairing.data = None
-        self.selected_backend = BackendType.OFFLINE
         self.setup.change_to_no_backend()
         self.handle_stt_menu()
 
@@ -716,6 +705,7 @@ class PairingSkill(OVOSSkill):
         self.send_stop_signal("pairing.tts.menu.stop")
         self.handle_display_manager("LoadingSkills")
         self.state = SetupState.INACTIVE
+        self.settings["first_setup"] = False
 
     # GUI
     def handle_display_manager(self, state):
