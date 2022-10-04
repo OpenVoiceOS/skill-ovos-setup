@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Aditya Mehra <aix.m@outlook.com>
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,188 +15,196 @@
  *
  */
 
-import QtQuick.Layouts 1.4
-import QtQuick 2.4
-import QtQuick.Controls 2.0
-import org.kde.kirigami 2.5 as Kirigami
+import QtQuick.Layouts 1.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import org.kde.kirigami 2.11 as Kirigami
 import org.kde.plasma.core 2.0 as PlasmaCore
+import QtGraphicalEffects 1.0
 import Mycroft 1.0 as Mycroft
 
 Item {
     id: backendView
     anchors.fill: parent
-    property bool horizontalMode: backendView.width > backendView.height ? 1 :0
+    property bool horizontalMode: backendView.width > backendView.height ? 1 : 0
 
     Rectangle {
         color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
-        anchors.margins: Mycroft.Units.gridUnit * 2
 
-        GridLayout {
-            anchors.fill: parent
-            z: 1
-            columns: horizontalMode ? 2 : 1
-            columnSpacing: Kirigami.Units.largeSpacing
-            Layout.alignment: horizontalMode ? Qt.AlignVCenter : Qt.AlignTop
+        Rectangle {
+            id: topArea
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: Kirigami.Units.gridUnit * 4
+            color: Kirigami.Theme.highlightColor
 
-            ColumnLayout {
-                Layout.maximumWidth: horizontalMode ? parent.width / 2 : parent.width
-                Layout.preferredHeight: horizontalMode ? parent.height : parent.height / 2
-                Layout.alignment: horizontalMode ? Qt.AlignVCenter : Qt.AlignTop
+            Kirigami.Icon {
+                id: topAreaIcon
+                source: "emblem-system-symbolic"
+                width: Kirigami.Units.iconSizes.large
+                height: width
+                anchors.left: parent.left
+                anchors.leftMargin: Mycroft.Units.gridUnit * 2
+                anchors.verticalCenter: parent.verticalCenter
 
-                Label {
-                    id: selBText
-                    Layout.fillWidth: true
-                    wrapMode: Text.WordWrap
-                    font.bold: true
-                    font.pixelSize: backendView.width * 0.05
-                    color: Kirigami.Theme.highlightColor
-                    text: "Select Your Backend"
-                }
-
-                Label {
-                    id: warnText
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignTop
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: backendView.width * 0.04
+                ColorOverlay {
+                    anchors.fill: parent
+                    source: topAreaIcon
                     color: Kirigami.Theme.textColor
-                    text: "A backend provides services used by Mycroft Core"
                 }
             }
 
-            Rectangle {
+            Label {
+                id: selectLanguageHeader
+                anchors.left: topAreaIcon.right
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.leftMargin: Mycroft.Units.gridUnit
+                text: qsTr("Select Your Backend")
+                horizontalAlignment: Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: topArea.height * 0.4
+                elide: Text.ElideLeft
+                maximumLineCount: 1
+                color: Kirigami.Theme.textColor
+            }
+
+            Kirigami.Separator {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: Kirigami.Units.largeSpacing
+                anchors.rightMargin: Kirigami.Units.largeSpacing
+                height: 1
+                color: Kirigami.Theme.textColor
+            }
+        }
+
+        ColumnLayout {
+            id: middleArea
+            anchors.bottom: bottomArea.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: topArea.bottom
+            anchors.margins: Mycroft.Units.gridUnit * 2
+        
+            Label {
+                id: warnText
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
+                wrapMode: Text.WordWrap
+                font.pixelSize: horizontalMode ? (backendView.height > 600 ? topArea.height * 0.4 : topArea.height * 0.25) : topArea.height * 0.3
+                color: Kirigami.Theme.textColor
+                text: qsTr("A backend provides services used by OpenVoiceOS Core")
+            }
+
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: Qt.darker(Kirigami.Theme.backgroundColor, 1.25)
-
-                ColumnLayout {
+                Layout.margins: horizontalMode ? Kirigami.Units.largeSpacing : 0
+        
+                GridLayout {
+                    id: backendsGrid
                     anchors.fill: parent
+                    z: 1
+                    columns: horizontalMode ? 3 : 1
+                    columnSpacing: Kirigami.Units.largeSpacing
+                    Layout.alignment: Qt.AlignVCenter
 
-                    Button {
+                    BackendButton {
                         id: bt1
-                        Layout.fillWidth: true
+                        backendName: "Selene " + qsTr("Backend")
+                        backendIcon: Qt.resolvedUrl("icons/selene.svg")
+                        backendType: "selene"
+                        horizontalMode: backendView.horizontalMode
+
+                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
-                        Layout.margins: Mycroft.Units.gridUnit
-
-                        background: Rectangle {
-                            color: bt1.down ? "transparent" :  Kirigami.Theme.highlightColor
-                            border.width: 6
-                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
-                            radius: 10
-
-                            Rectangle {
-                                width: parent.width - 32
-                                height: parent.height - 32
-                                anchors.centerIn: parent
-                                color: bt1.down ? Kirigami.Theme.highlightColor : Kirigami.Theme.backgroundColor
-                                radius: 10
-                            }
-                        }
-
-                        contentItem: Label {
-                            width: parent.width
-                            height: parent.height
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                            elide: Text.ElideRight
-                            fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
-                            minimumPixelSize: 8
-                            font.pixelSize: 32
-                            text: "Mycroft Backend"
-                        }
-
-                        onClicked: {
-                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.set.backend",
-                            {"backend": "selene"})
-                        }
                     }
 
-                    Button {
+                    BackendButton {
                         id: bt2
-                        Layout.fillWidth: true
+                        backendName: qsTr("Personal Backend")
+                        backendIcon: Qt.resolvedUrl("icons/personal.svg")
+                        backendType: "personal"
+                        horizontalMode: backendView.horizontalMode
+                        
+                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
-                        Layout.margins: Mycroft.Units.gridUnit
+                    }
 
-                        background: Rectangle {
-                            color: bt2.down ? "transparent" :  Kirigami.Theme.highlightColor
-                            border.width: 6
-                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
-                            radius: 10
+                    BackendButton {
+                        id: bt3
+                        backendName: qsTr("No Backend")
+                        backendIcon: Qt.resolvedUrl("icons/nobackend.svg")
+                        backendType: "offline"
+                        horizontalMode: backendView.horizontalMode
 
-                            Rectangle {
-                                width: parent.width - 32
-                                height: parent.height - 32
-                                anchors.centerIn: parent
-                                color: bt2.down ? Kirigami.Theme.highlightColor : Kirigami.Theme.backgroundColor
-                                radius: 10
+                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
+                        Layout.fillHeight: true
+                    }
+                }
+            }
+        }
+
+
+        Rectangle {
+            id: bottomArea
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: Kirigami.Units.gridUnit * 3
+            color: Kirigami.Theme.highlightColor
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: Kirigami.Units.largeSpacing
+
+                Button {
+                    id: btnba1
+                    Layout.preferredWidth: backendView.horizontalMode ? parent.width / 2 : parent.width
+                    Layout.fillHeight: true
+
+                    background: Rectangle {
+                        color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
+                        border.width: 3
+                        border.color: Kirigami.Theme.backgroundColor
+                        radius: 3
+                    }
+
+                    contentItem: Item {
+                        RowLayout {
+                            anchors.centerIn: parent
+
+                            Kirigami.Icon {
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: height
+                                Layout.alignment: Qt.AlignVCenter
+                                source: "arrow-left"
                             }
-                        }
 
-                        contentItem: Label {
-                            width: parent.width
-                            height: parent.height
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                            elide: Text.ElideRight
-                            fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
-                            minimumPixelSize: 8
-                            font.pixelSize: 32
-                            text: "Personal Backend"
-                        }
-
-                        onClicked: {
-                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.set.backend",
-                            {"backend": "personal"})
+                            Kirigami.Heading {
+                                level: 2
+                                Layout.fillHeight: true          
+                                wrapMode: Text.WordWrap
+                                font.bold: true
+                                color: Kirigami.Theme.textColor
+                                text: qsTr("Language Selection")
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignLeft
+                            }
                         }
                     }
 
-                    Button {
-                        id: bt3
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.margins: Mycroft.Units.gridUnit
-
-                        background: Rectangle {
-                            color: bt3.down ? "transparent" :  Kirigami.Theme.highlightColor
-                            border.width: 6
-                            border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
-                            radius: 10
-
-                            Rectangle {
-                                width: parent.width - 32
-                                height: parent.height - 32
-                                anchors.centerIn: parent
-                                color: bt3.down ? Kirigami.Theme.highlightColor : Kirigami.Theme.backgroundColor
-                                radius: 10
-                            }
-                        }
-
-                        contentItem: Label {
-                            width: parent.width
-                            height: parent.height
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                            elide: Text.ElideRight
-                            fontSizeMode: horizontalMode ? Text.HorizontalFit : Text.VerticalFit
-                            minimumPixelSize: 8
-                            font.pixelSize: 32
-                            text: "No Backend"
-                        }
-
-                        onClicked: {
-                            Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                            triggerGuiEvent("mycroft.device.set.backend",
-                            {"backend": "offline"})
-                        }
+                    onClicked: {
+                        Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                        triggerGuiEvent("mycroft.return.select.language", {})
                     }
                 }
             }
         }
     }
-} 
+}
