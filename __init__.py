@@ -333,9 +333,9 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(Message("mycroft.not.paired"))
         else:
-            self.state = SetupState.INACTIVE
             self.handle_display_manager("LoadingSkills")
             self.setup.update_device_attributes_on_backend()
+            self.end_setup(True)
 
     @property
     def backend_type(self):
