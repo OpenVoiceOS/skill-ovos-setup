@@ -278,6 +278,18 @@ class PairingSkill(OVOSSkill):
 
         self._init_state()
 
+        if "langs" not in self.settings:
+            # Name: display name to display in UI
+            # Code: Used by ovos shell locale, get tts and stt engines
+            # System Code: Used by system as full code is required
+            self.settings["langs"] = [{"name": "English", "code": "en", "system_code": "en_US"},
+                        {"name": "Italian", "code": "it", "system_code": "it_IT"},
+                        {"name": "French", "code": "fr", "system_code": "fr_FR"},
+                        {"name": "Spanish", "code": "es", "system_code": "es_ES"},
+                        {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
+                        {"name": "German", "code": "de", "system_code": "de_DE"},
+                        {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}]
+
     def _init_setup_options(self):
         self.setup = SetupManager(self.bus)
         # read default values for voice interaction from settings
@@ -495,21 +507,14 @@ class PairingSkill(OVOSSkill):
         sleep(0.3) # Wait for display to show the screen before speaking
         self.speak_dialog("welcome_screen", wait=True)
         sleep(0.3) # Wait for display a bit before showing the next screen
-        self.handle_language_menu()
+        if self.pairing_mode != PairingMode.GUI:
+            self.handle_backend_menu()
+        else:
+            self.handle_language_menu()
 
     def handle_language_menu(self):
         self.state = SetupState.SELECTING_LANGUAGE
-        # Name: display name to display in UI
-        # Code: Used by ovos shell locale, get tts and stt engines
-        # System Code: Used by system as full code is required
-        # This cannot come from skill settings as it does not support this format needed
-        supported_languages = [{"name": "English", "code": "en", "system_code": "en_US"},
-                        {"name": "Italian", "code": "it", "system_code": "it_IT"},
-                        {"name": "French", "code": "fr", "system_code": "fr_FR"},
-                        {"name": "Spanish", "code": "es", "system_code": "es_ES"},
-                        {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
-                        {"name": "German", "code": "de", "system_code": "de_DE"},
-                        {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}]
+        supported_languages = self.settings["langs"]
         self.gui["supportedLanguagesModel"] = supported_languages
         self.handle_display_manager("LanguageMenu")
         self.speak_dialog("language_menu")
