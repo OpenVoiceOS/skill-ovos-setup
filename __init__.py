@@ -434,9 +434,9 @@ class PairingSkill(OVOSSkill):
                 if check_remote_pairing(ignore_errors=True):
                     # Already paired!
                     self.speak_dialog("already_paired")
-                self.show_pairing_success()
-                self.end_setup(success=True)
-                return
+                    self.show_pairing_success()
+                    self.end_setup(success=True)
+                    return
 
         # trigger setup workflow
         self.handle_backend_menu()
