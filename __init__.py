@@ -25,8 +25,8 @@ from ovos_utils.log import LOG
 from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
 from ovos_workshop.skills import OVOSSkill
-from selene_api.pairing import PairingManager
-from selene_api.api import BackendType, get_backend_type
+from ovos_backend_client.pairing import PairingManager
+from ovos_backend_client.api import BackendType, get_backend_type
 from ovos_config.config import update_mycroft_config
 
 
