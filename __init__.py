@@ -388,12 +388,12 @@ class PairingSkill(OVOSSkill):
             self.state = SetupState.SELECTING_BACKEND
             self.bus.emit(message.forward("mycroft.not.paired"))
         else:
-            self.state = SetupState.INACTIVE
+            self.end_setup()
 
     def handle_wifi_skip(self, message):
         LOG.info("Offline mode selected, setup will resume on restart")
         self.handle_display_manager("OfflineMode")
-        self.state = SetupState.INACTIVE
+        self.end_setup(success=False)
 
     def handle_intent_aborted(self):
         LOG.info("killing all dialogs")
@@ -429,14 +429,17 @@ class PairingSkill(OVOSSkill):
     def handle_pairing(self, message=None):
         self.state = SetupState.SELECTING_BACKEND
 
-        if self.backend_type != BackendType.OFFLINE and check_remote_pairing(ignore_errors=True):
-            # Already paired!
-            if message:  # intent
-                self.speak_dialog("already_paired")
-            self.state = SetupState.INACTIVE
-            self.show_pairing_success()
-        elif not self.pairing.data:
-            self.handle_backend_menu()
+        if self.backend_type in [BackendType.SELENE, BackendType.PERSONAL]:
+            if check_remote_pairing(ignore_errors=True):
+                # Already paired!
+                if message:  # intent
+                    self.speak_dialog("already_paired")
+                self.show_pairing_success()
+                self.end_setup(success=True)
+                return
+
+        # trigger setup workflow
+        self.handle_backend_menu()
 
     # pairing callbacks
     def on_pairing_start(self):
@@ -462,18 +465,20 @@ class PairingSkill(OVOSSkill):
         sleep(5)
         self.handle_display_manager("LoadingSkills")
         self.setup.update_device_attributes_on_backend()
-        self.state = SetupState.INACTIVE
-        self.settings["first_setup"] = False
+        self.end_setup(success=True)
 
     def on_pairing_error(self, quiet):
         if not quiet:
             self.speak_dialog("unexpected.error.restarting")
         self.show_pairing_fail()
+        self.end_setup(success=False)
 
     def on_pairing_end(self, error_dialog):
         if error_dialog:
             self.speak_dialog(error_dialog)
-        self.state = SetupState.INACTIVE
+            self.end_setup(success=False)
+        else:
+            self.end_setup(success=True)
 
     # Pairing GUI events
     #### Backend selection menu
@@ -704,8 +709,14 @@ class PairingSkill(OVOSSkill):
 
         self.send_stop_signal("pairing.tts.menu.stop")
         self.handle_display_manager("LoadingSkills")
-        self.state = SetupState.INACTIVE
-        self.settings["first_setup"] = False
+        self.end_setup(success=True)
+
+    def end_setup(self, success=False):
+        if self.state != SetupState.INACTIVE:
+            if success:  # dont restart setup on next boot
+                self.settings["first_setup"] = False
+            self.state = SetupState.INACTIVE
+            self.bus.emit(Message("mycroft.paired"))  # tell skill manager to stop waiting for pairing step
 
     # GUI
     def handle_display_manager(self, state):
