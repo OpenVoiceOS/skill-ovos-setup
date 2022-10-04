@@ -429,10 +429,10 @@ class PairingSkill(OVOSSkill):
     def handle_pairing(self, message=None):
         self.state = SetupState.SELECTING_BACKEND
 
-        if self.backend_type in [BackendType.SELENE, BackendType.PERSONAL]:
-            if check_remote_pairing(ignore_errors=True):
-                # Already paired!
-                if message:  # intent
+        if message:  # intent
+            if self.backend_type in [BackendType.SELENE, BackendType.PERSONAL]:
+                if check_remote_pairing(ignore_errors=True):
+                    # Already paired!
                     self.speak_dialog("already_paired")
                 self.show_pairing_success()
                 self.end_setup(success=True)
