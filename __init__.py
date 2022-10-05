@@ -39,6 +39,7 @@ class SetupState(str, Enum):
     SELECTING_STT = "stt"
     SELECTING_TTS = "tts"
     PAIRING = "pairing"
+    FINISHED = "finished"
 
 
 class PairingMode(str, Enum):
@@ -715,8 +716,8 @@ class PairingSkill(OVOSSkill):
         if self.state != SetupState.INACTIVE:
             if success:  # dont restart setup on next boot
                 self.settings["first_setup"] = False
-            self.state = SetupState.INACTIVE
-            self.bus.emit(Message("mycroft.paired"))  # tell skill manager to stop waiting for pairing step
+            self.state = SetupState.FINISHED
+            self.bus.emit(Message("ovos.setup.finished"))  # tell skill manager to stop waiting for pairing step
 
     # GUI
     def handle_display_manager(self, state):
