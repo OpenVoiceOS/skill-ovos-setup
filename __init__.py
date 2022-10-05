@@ -169,7 +169,7 @@ class SetupManager:
                 "url": "https://api.mycroft.ai",
                 "version": "v1",
                 "disabled": False,
-                "backend_type": BackendType.SELENE
+                "backend_type": str(BackendType.SELENE)
             },
             "listener": {
                 "wake_word_upload": {
@@ -186,7 +186,7 @@ class SetupManager:
                 "url": url,
                 "version": "v1",
                 "disabled": False,
-                "backend_type": BackendType.PERSONAL
+                "backend_type": str(BackendType.PERSONAL)
             },
             "listener": {
                 "wake_word_upload": {
@@ -201,7 +201,7 @@ class SetupManager:
         config = {
             "server": {
                 "disabled": True,
-                "backend_type": BackendType.OFFLINE
+                "backend_type": str(BackendType.OFFLINE)
             }
         }
         update_mycroft_config(config, bus=self.bus)
