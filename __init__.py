@@ -281,13 +281,13 @@ class PairingSkill(OVOSSkill):
             fallback = self.settings.get("offline_fallback_stt")
             cfg = self.settings.get("offline_stt_cfg")
             fallback_cfg = self.settings.get("offline_fallback_stt_cfg")
-            self.setup.set_offline_stt_opt(engine, fallback, cfg, fallback_cfg)
+            self.setup.set_offline_stt_opt(engine, cfg, fallback, fallback_cfg)
         if self.settings.get("online_stt"):
             engine = self.settings.get("online_stt")
             fallback = self.settings.get("online_fallback_stt")
             cfg = self.settings.get("online_stt_cfg")
             fallback_cfg = self.settings.get("online_fallback_stt_cfg")
-            self.setup.set_online_stt_opt(engine, fallback, cfg, fallback_cfg)
+            self.setup.set_online_stt_opt(engine, cfg, fallback, fallback_cfg)
         if self.settings.get("online_male"):
             engine = self.settings.get("online_male")
             cfg = self.settings.get("online_male_cfg")
