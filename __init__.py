@@ -11,7 +11,6 @@
 # limitations under the License.
 #
 import time
-import random
 from enum import Enum
 from time import sleep
 from uuid import uuid4
@@ -530,7 +529,7 @@ class PairingSkill(OVOSSkill):
     def handle_language_selected(self, message):
         self.selected_language = message.data["code"]
         system_code = message.data["system_code"]
-        self.bus.emit(Message("system.configure.language", data={"code": self.selected_language, "language_code": self.system_code}))
+        self.bus.emit(Message("system.configure.language", data={"code": self.selected_language, "language_code": system_code}))
         self.handle_backend_menu()
 
     def handle_language_back_event(self, message):
@@ -687,9 +686,11 @@ class PairingSkill(OVOSSkill):
         for engine, configs in model.items():
             # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
-            supported_stt_engines.append({"plugin_name": plugin_display_name,
-                                          "offline": configs[0]["offline"],
-                                          "engine": engine})
+            for config in configs:
+                supported_stt_engines.append({"plugin_name": plugin_display_name,
+                                              "display_name": config.get("display_name", "unknown"),
+                                              "offline": config.get("offline", False),
+                                              "engine": engine})
 
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
@@ -739,11 +740,9 @@ class PairingSkill(OVOSSkill):
                 supported_tts_engines.append({"plugin_name": plugin_display_name,
                                               "display_name": voice.get("display_name", "unknown"),
                                               "gender": voice.get("gender", "unknown"),
-                                              "offline": voice["offline"],
+                                              "offline": voice.get("offline", False),
                                               'engine': engine})
 
-        # Randomize the order of supported TTS engines list to give a more natural feel to the selection
-        random.shuffle(supported_tts_engines)
         self.gui["tts_engines"] = supported_tts_engines
         self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")

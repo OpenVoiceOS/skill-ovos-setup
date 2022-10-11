@@ -151,7 +151,7 @@ Item {
 
                     onClicked: {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                        triggerGuiEvent("mycroft.device.confirm.stt", {"engine": model.engine})
+                        triggerGuiEvent("mycroft.device.confirm.stt", {"engine": model.engine, "display_name": model.display_name, "offline": model.offline})
                     }
 
                     onPressed: {
@@ -185,7 +185,7 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         color: Kirigami.Theme.textColor
                         font.capitalization: Font.AllUppercase
-                        text: model.plugin_name
+                        text: model.plugin_name + " | " + model.display_name
                     }
 
                     Rectangle {
