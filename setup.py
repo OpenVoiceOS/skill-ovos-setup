@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
-# from github to ensure standard skill_id
-SKILL_NAME = "skill-ovos-setup"
-SKILL_AUTHOR = "OpenVoiceOS"
+URL = "https://github.com/OpenVoiceOS/skill-ovos-setup"
+SKILL_CLAZZ = "PairingSkill"  # needs to match __init__.py class name
+PYPI_NAME = "ovos-skill-setup"  # pip install PYPI_NAME
+
+
+# below derived from github url to ensure standard skill_id
+SKILL_NAME, SKILL_AUTHOR = URL.split(".com/")[-1].split("/")
 SKILL_PKG = SKILL_NAME.replace('-', '_')
+PLUGIN_ENTRY_POINT = f'{SKILL_NAME.lower()}.{SKILL_AUTHOR.lower()}={SKILL_PKG}:{SKILL_CLAZZ}'
 # skill_id=package_name:SkillClass
-PLUGIN_ENTRY_POINT = f'{SKILL_NAME}.{SKILL_AUTHOR.lower()}={SKILL_PKG}:PairingSkill'
 
 
 def get_requirements(requirements_filename: str):
@@ -47,11 +51,11 @@ with open("./version.py", "r", encoding="utf-8") as v:
 
 setup(
     # this is the package name that goes on pip
-    name='ovos-skill-setup',
+    name=PYPI_NAME,
     version=version,
     description='OVOS skill plugin',
     long_description=long_description,
-    url=f'https://github.com/{SKILL_AUTHOR}/{SKILL_NAME}',
+    url=URL,
     author='JarbasAi',
     author_email='jarbasai@mailfence.com',
     license='Apache-2.0',
