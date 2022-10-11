@@ -15,11 +15,10 @@
  *
  */
 
-import QtQuick.Layouts 1.4
-import QtQuick 2.4
-import QtQuick.Controls 2.0
-import org.kde.kirigami 2.4 as Kirigami
-
+import QtQuick.Layouts 1.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import org.kde.kirigami 2.11 as Kirigami
 import Mycroft 1.0 as Mycroft
 
 Item {
@@ -56,7 +55,7 @@ Item {
                     font.pixelSize: horizontalMode ? root.width * 0.07 : root.height * 0.04
                     horizontalAlignment: Text.AlignHCenter
                     color: Kirigami.Theme.textColor
-                    text: "Pair this device at "
+                    text: qsTr("Pair this device at")
                 }
                 Kirigami.Heading {
                     id: sentence3b

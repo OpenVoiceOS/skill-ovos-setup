@@ -11,6 +11,7 @@
 # limitations under the License.
 #
 import time
+import random
 from enum import Enum
 from time import sleep
 from uuid import uuid4
@@ -28,6 +29,8 @@ from ovos_workshop.skills import OVOSSkill
 from ovos_backend_client.pairing import PairingManager
 from ovos_backend_client.backends import BackendType, get_backend_type
 from ovos_config.config import update_mycroft_config
+from ovos_plugin_manager.stt import get_stt_lang_configs
+from ovos_plugin_manager.tts import get_tts_lang_configs
 
 
 class SetupState(str, Enum):
@@ -35,6 +38,8 @@ class SetupState(str, Enum):
     LOADING = "loading"
     INACTIVE = "inactive"
     SELECTING_WIFI = "wifi"
+    WELCOME = "welcome"
+    SELECTING_LANGUAGE = "language"
     SELECTING_BACKEND = "backend"
     SELECTING_STT = "stt"
     SELECTING_TTS = "tts"
@@ -246,6 +251,7 @@ class PairingSkill(OVOSSkill):
         self.mycroft_ready = False
         self._state = SetupState.LOADING
         self.pairing_mode = PairingMode.VOICE
+        self.selected_language = "en"
 
     # startup
     def initialize(self):
@@ -268,9 +274,26 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.return.select.backend", self.handle_return_event)
         self.gui.register_handler("mycroft.device.confirm.stt", self.handle_stt_selected)
         self.gui.register_handler("mycroft.device.confirm.tts", self.handle_tts_selected)
+        self.gui.register_handler("mycroft.device.confirm.language", self.handle_language_selected)
+        self.gui.register_handler("mycroft.return.select.language", self.handle_language_back_event)
         self.nato_dict = self.translate_namedvalues('codes')
 
         self._init_state()
+
+        if "enable_language_support" not in self.settings:
+            self.settings["enable_language_support"] = False
+
+        if "langs" not in self.settings:
+            # Name: display name to display in UI
+            # Code: Used by ovos shell locale, get tts and stt engines
+            # System Code: Used by system as full code is required
+            self.settings["langs"] = [{"name": "English", "code": "en", "system_code": "en_US"},
+                        {"name": "Italian", "code": "it", "system_code": "it_IT"},
+                        {"name": "French", "code": "fr", "system_code": "fr_FR"},
+                        {"name": "Spanish", "code": "es", "system_code": "es_ES"},
+                        {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
+                        {"name": "German", "code": "de", "system_code": "de_DE"},
+                        {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}]
 
     def _init_setup_options(self):
         self.setup = SetupManager(self.bus)
@@ -440,7 +463,7 @@ class PairingSkill(OVOSSkill):
                     return
 
         # trigger setup workflow
-        self.handle_backend_menu()
+        self.handle_welcome_screen()
 
     # pairing callbacks
     def on_pairing_start(self):
@@ -482,6 +505,38 @@ class PairingSkill(OVOSSkill):
             self.end_setup(success=True)
 
     # Pairing GUI events
+    ### Language Selection & Welcome Screen
+    def handle_welcome_screen(self):
+        self.state = SetupState.WELCOME
+        self.handle_display_manager("Welcome")
+        sleep(0.3) # Wait for display to show the screen before speaking
+        self.speak_dialog("welcome_screen", wait=True)
+        sleep(0.3) # Wait for display a bit before showing the next screen
+        if self.pairing_mode != PairingMode.GUI:
+            self.handle_backend_menu()
+        else:
+            lang_support_enabled = self.settings.get("enable_language_support", False)
+            if not lang_support_enabled:
+                self.handle_backend_menu()
+            else:
+                self.handle_language_menu()
+
+    def handle_language_menu(self):
+        self.state = SetupState.SELECTING_LANGUAGE
+        supported_languages = self.settings["langs"]
+        self.gui["supportedLanguagesModel"] = supported_languages
+        self.handle_display_manager("LanguageMenu")
+        self.speak_dialog("language_menu")
+
+    def handle_language_selected(self, message):
+        self.selected_language = message.data["code"]
+        system_code = message.data["system_code"]
+        self.bus.emit(Message("system.configure.language", data={"code": self.selected_language, "language_code": self.system_code}))
+        self.handle_backend_menu()
+
+    def handle_language_back_event(self, message):
+        self.handle_language_menu()
+
     #### Backend selection menu
     @killable_event(msg="pairing.backend.menu.stop")
     def handle_backend_menu(self):
@@ -628,9 +683,17 @@ class PairingSkill(OVOSSkill):
                     callback=handle_intent_aborted)
     def handle_stt_menu(self):
         self.state = SetupState.SELECTING_STT
-        self.gui["offlineSTT"] = self.setup.offline_stt_module
-        self.gui["onlineSTT"] = self.setup.online_stt_module
-        self.handle_display_manager("BackendLocalSTT")
+        model = get_stt_lang_configs(lang=self.selected_language, include_dialects=True)
+        supported_stt_engines = list()
+        for engine, configs in model.items():
+            # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
+            plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
+            supported_stt_engines.append({"plugin_name": plugin_display_name,
+                                          "offline": configs[0]["offline"],
+                                          "engine": engine})
+
+        self.gui["stt_engines"] = supported_stt_engines
+        self.handle_display_manager("STTListMenu")
         self.send_stop_signal("pairing.confirmation.stop")
         self.speak_dialog("stt_intro")
         if self.pairing_mode != PairingMode.VOICE:
@@ -667,11 +730,23 @@ class PairingSkill(OVOSSkill):
                     callback=handle_intent_aborted)
     def handle_tts_menu(self):
         self.state = SetupState.SELECTING_TTS
-        self.gui["offlineMale"] = self.setup.offline_male_tts_module
-        self.gui["onlineMale"] = self.setup.online_male_tts_module
-        self.gui["offlineFemale"] = self.setup.offline_female_tts_module
-        self.gui["onlineFemale"] = self.setup.online_female_tts_module
-        self.handle_display_manager("BackendLocalTTS")
+        model = get_tts_lang_configs(lang=self.selected_language, include_dialects=True)
+        supported_tts_engines = list()
+        for engine, configs in model.items():
+            # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
+            plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
+            # Need to go one level deeper to get the voice name and gender
+            for voice in configs:
+                supported_tts_engines.append({"plugin_name": plugin_display_name,
+                                              "display_name": voice.get("display_name", "unknown"),
+                                              "gender": voice.get("gender", "unknown"),
+                                              "offline": voice["offline"],
+                                              'engine': engine})
+
+        # Randomize the order of supported TTS engines list to give a more natural feel to the selection
+        random.shuffle(supported_tts_engines)
+        self.gui["tts_engines"] = supported_tts_engines
+        self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts_intro")
         if self.pairing_mode != PairingMode.VOICE:
