@@ -5,3 +5,4 @@ ovos-tts-plugin-mimic
 ovos-tts-plugin-mimic2
 ovos_backend_client~=0.0, >=0.0.5a3
 ovos-stt-plugin-selene
+ovos-PHAL-plugin-system>=0.0.2a5
