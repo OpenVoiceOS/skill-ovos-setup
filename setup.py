@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from os import path, walk
 from setuptools import setup
 
 URL = "https://github.com/OpenVoiceOS/skill-ovos-setup"
