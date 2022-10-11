@@ -42,7 +42,7 @@ Item {
             text: QT_TR_NOOP("Configure STT in backend")
         }
         ListElement {
-            text: QT_TR_NOOP("Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico")
+            text: QT_TR_NOOP("Multiple configurable TTS Options")
         }
     }
 

@@ -20,8 +20,8 @@
         </message>
         <message>
             <location line="45" filename="../BackendLocal.qml"/>
-            <source>Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico</source>
-            <translation>Opções de TTS configuráveis: Mimic2 | </translation>
+            <source>Multiple configurable TTS Options</source>
+            <translation>Várias opções de TTS configuráveis</translation>
         </message>
         <message>
             <location line="84" filename="../BackendLocal.qml"/>

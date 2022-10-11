@@ -16,12 +16,12 @@
         <message>
             <location line="42" filename="../BackendLocal.qml"/>
             <source>Configure STT in backend</source>
-            <translation>Configurer STT dans le backend</translation>
+            <translation>Configurer STT dans le back-end</translation>
         </message>
         <message>
             <location line="45" filename="../BackendLocal.qml"/>
-            <source>Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico</source>
-            <translation>Options TTS configurables : Mimic2 | </translation>
+            <source>Multiple Configurable TTS Options</source>
+            <translation>Plusieurs options TTS configurables</translation>
         </message>
         <message>
             <location line="84" filename="../BackendLocal.qml"/>
@@ -31,7 +31,7 @@
         <message>
             <location line="120" filename="../BackendLocal.qml"/>
             <source>Manage all your devices using a personal backend</source>
-            <translation>Gérez tous vos appareils à l'aide d'un backend personnel</translation>
+            <translation>Gérez tous vos appareils à l'aide d'un back-end personnel</translation>
         </message>
         <message>
             <location line="213" filename="../BackendLocal.qml"/>

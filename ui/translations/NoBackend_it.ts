@@ -10,13 +10,13 @@
         </message>
         <message>
             <location line="38" filename="../NoBackend.qml"/>
-            <source>Configurable STT Options: Google | Vosk</source>
-            <translation>Opzioni STT configurabili: Google | </translation>
+            <source>Multiple configurable STT Options</source>
+            <translation>Opzioni STT multiple configurabili</translation>
         </message>
         <message>
             <location line="41" filename="../NoBackend.qml"/>
-            <source>Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico</source>
-            <translation>Opzioni TTS configurabili: Mimic2 | </translation>
+            <source>Multiple configurable TTS Options</source>
+            <translation>Opzioni TTS multiple configurabili</translation>
         </message>
         <message>
             <location line="44" filename="../NoBackend.qml"/>

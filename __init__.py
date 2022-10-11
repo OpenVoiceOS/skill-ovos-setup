@@ -278,8 +278,8 @@ class PairingSkill(OVOSSkill):
 
         self._init_state()
 
-        if "enable_language_support" not in self.settings:
-            self.settings["enable_language_support"] = False
+        if "enable_language_selection" not in self.settings:
+            self.settings["enable_language_selection"] = False
 
         if "langs" not in self.settings:
             # Name: display name to display in UI
@@ -513,7 +513,7 @@ class PairingSkill(OVOSSkill):
         if self.pairing_mode != PairingMode.GUI:
             self.handle_backend_menu()
         else:
-            lang_support_enabled = self.settings.get("enable_language_support", False)
+            lang_support_enabled = self.settings.get("enable_language_selection", False)
             if not lang_support_enabled:
                 self.handle_backend_menu()
             else:
@@ -688,7 +688,7 @@ class PairingSkill(OVOSSkill):
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
             for config in configs:
                 supported_stt_engines.append({"plugin_name": plugin_display_name,
-                                              "display_name": config.get("display_name", "unknown"),
+                                              "display_name": config.get("display_name", " "),
                                               "offline": config.get("offline", False),
                                               "engine": engine})
 
@@ -738,7 +738,7 @@ class PairingSkill(OVOSSkill):
             # Need to go one level deeper to get the voice name and gender
             for voice in configs:
                 supported_tts_engines.append({"plugin_name": plugin_display_name,
-                                              "display_name": voice.get("display_name", "unknown"),
+                                              "display_name": voice.get("display_name", " "),
                                               "gender": voice.get("gender", "unknown"),
                                               "offline": voice.get("offline", False),
                                               'engine': engine})

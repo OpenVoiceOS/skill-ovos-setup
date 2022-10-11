@@ -26,12 +26,12 @@
         <message>
             <location line="83" filename="../BackendMycroft.qml"/>
             <source>Backend</source>
-            <translation>Backend</translation>
+            <translation>Back-end</translation>
         </message>
         <message>
             <location line="118" filename="../BackendMycroft.qml"/>
             <source>The official backend service provided by</source>
-            <translation>Le service backend officiel fourni par</translation>
+            <translation>Le service back-end officiel fourni par</translation>
         </message>
         <message>
             <location line="211" filename="../BackendMycroft.qml"/>

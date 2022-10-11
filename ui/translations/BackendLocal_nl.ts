@@ -21,7 +21,7 @@
         <message>
             <location line="45" filename="../BackendLocal.qml"/>
             <source>Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico</source>
-            <translation>Configureerbare TTS-opties: Mimic2 | </translation>
+            <translation>Meerdere configureerbare TTS-opties</translation>
         </message>
         <message>
             <location line="84" filename="../BackendLocal.qml"/>

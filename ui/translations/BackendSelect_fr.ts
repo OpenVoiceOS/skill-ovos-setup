@@ -6,17 +6,17 @@
         <message>
             <location line="66" filename="../BackendSelect.qml"/>
             <source>Select Your Backend</source>
-            <translation>Sélectionnez votre backend</translation>
+            <translation>Sélectionnez votre back-end</translation>
         </message>
         <message>
             <location line="101" filename="../BackendSelect.qml"/>
             <source>A backend provides services used by OpenVoiceOS Core</source>
-            <translation>Un backend fournit des services utilisés par OpenVoiceOS Core</translation>
+            <translation>Un back-end fournit des services utilisés par OpenVoiceOS Core</translation>
         </message>
         <message>
             <location line="119" filename="../BackendSelect.qml"/>
             <source>Backend</source>
-            <translation>Backend</translation>
+            <translation>Back-end</translation>
         </message>
         <message>
             <location line="130" filename="../BackendSelect.qml"/>

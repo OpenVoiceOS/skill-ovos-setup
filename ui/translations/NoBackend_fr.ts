@@ -15,8 +15,8 @@
         </message>
         <message>
             <location line="41" filename="../NoBackend.qml"/>
-            <source>Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico</source>
-            <translation>Options TTS configurables : Mimic2 | </translation>
+            <source>Multiple Configurable TTS Options</source>
+            <translation>Plusieurs options TTS configurables</translation>
         </message>
         <message>
             <location line="44" filename="../NoBackend.qml"/>

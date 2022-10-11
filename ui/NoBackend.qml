@@ -35,10 +35,10 @@ Item {
             text: QT_TR_NOOP("No Pairing Required")
         }
         ListElement {
-            text: QT_TR_NOOP("Configurable STT Options: Google | Vosk")
+            text: QT_TR_NOOP("Multiple configurable STT Options")
         }
         ListElement {
-            text: QT_TR_NOOP("Configurable TTS Options: Mimic2 | Mimic | Larynx | Pico")
+            text: QT_TR_NOOP("Multiple configurable TTS Options")
         }
         ListElement {
             text: QT_TR_NOOP("No internet needed")
