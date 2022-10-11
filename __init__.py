@@ -14,12 +14,11 @@ from enum import Enum
 from time import sleep
 
 from adapt.intent import IntentBuilder
-from mycroft.api import is_paired, check_remote_pairing
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
 from ovos_backend_client.backends import BackendType, get_backend_type
 from ovos_backend_client.backends.selene import SELENE_API_URL, SELENE_PRECISE_URL
-from ovos_backend_client.pairing import PairingManager
+from ovos_backend_client.pairing import PairingManager, is_paired, check_remote_pairing
 from ovos_config.config import update_mycroft_config
 from ovos_plugin_manager.stt import get_stt_lang_configs
 from ovos_plugin_manager.tts import get_tts_lang_configs
