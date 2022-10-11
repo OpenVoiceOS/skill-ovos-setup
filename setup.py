@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from os import path, walk
 from setuptools import setup
+from os import path, walk
 
 URL = "https://github.com/OpenVoiceOS/skill-ovos-setup"
 SKILL_CLAZZ = "PairingSkill"  # needs to match __init__.py class name
@@ -21,6 +22,9 @@ def get_requirements(requirements_filename: str):
         requirements = r.readlines()
     requirements = [r.strip() for r in requirements if r.strip()
                     and not r.strip().startswith("#")]
+    if 'MYCROFT_LOOSE_REQUIREMENTS' in os.environ:
+        print('USING LOOSE REQUIREMENTS!')
+        requirements = [r.replace('==', '>=').replace('~=', '>=') for r in requirements]
     return requirements
 
 
