@@ -6,7 +6,7 @@
         <message>
             <location line="30" filename="../LoadingSkills.qml"/>
             <source>Loading Skills</source>
-            <translation>Fähigkeiten laden</translation>
+            <translation>Lade Skills</translation>
         </message>
         <message>
             <location line="42" filename="../LoadingSkills.qml"/>

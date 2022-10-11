@@ -31,7 +31,7 @@
         <message>
             <location line="118" filename="../NoBackend.qml"/>
             <source>Allows your device to work offline</source>
-            <translation>Ermöglicht Ihrem Gerä</translation>
+            <translation>Ermöglicht dem Gerät offline zu arbeiten</translation>
         </message>
         <message>
             <location line="211" filename="../NoBackend.qml"/>
