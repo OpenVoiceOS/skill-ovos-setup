@@ -266,11 +266,11 @@ class PairingSkill(OVOSSkill):
 
         # limit selectable plugins
         if "tts_blacklist" not in self.settings:
-            # TODO - espeak, SAM, beepspeak, what else?
-            self.settings["tts_blacklist"] = []
+            self.settings["tts_blacklist"] = ["ovos-tts-plugin-SAM",
+                                              "ovos-tts-plugin-beepspeak",
+                                              "ovos_tts_plugin_espeakng"]
         if "stt_blacklist" not in self.settings:
-            # TODO - pocketsphinx, what else?
-            self.settings["stt_blacklist"] = []
+            self.settings["stt_blacklist"] = ["ovos-stt-plugin-pocketsphinx"]
 
         # configure selectable languages
         if "langs" not in self.settings:
