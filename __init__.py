@@ -112,6 +112,7 @@ class SetupManager:
                 d = {"plugin_name": plugin_display_name,
                      "display_name": config.get("display_name", " "),
                      "offline": config.get("offline", False),
+                     "lang": lang,
                      "engine": engine}
                 stt_opts.append(d)
                 self._stt_opts[hash_dict(d)] = config
@@ -131,6 +132,7 @@ class SetupManager:
                      "display_name": voice.get("display_name", " "),
                      "gender": voice.get("gender", " "),
                      "offline": voice.get("offline", False),
+                     "lang": lang,
                      'engine': engine}
                 tts_opts.append(d)
                 self._tts_opts[hash_dict(d)] = voice
