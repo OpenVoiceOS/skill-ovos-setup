@@ -250,6 +250,7 @@ class PairingSkill(OVOSSkill):
         self.mycroft_ready = False
         self._state = SetupState.LOADING
         self.pairing_mode = PairingMode.VOICE
+        self.selected_language = "en"
 
     # startup
     def initialize(self):
@@ -277,6 +278,9 @@ class PairingSkill(OVOSSkill):
         self.nato_dict = self.translate_namedvalues('codes')
 
         self._init_state()
+
+        if "enable_language_support" not in self.settings:
+            self.settings["enable_language_support"] = False
 
         if "langs" not in self.settings:
             # Name: display name to display in UI
@@ -510,7 +514,11 @@ class PairingSkill(OVOSSkill):
         if self.pairing_mode != PairingMode.GUI:
             self.handle_backend_menu()
         else:
-            self.handle_language_menu()
+            lang_support_enabled = self.settings.get("enable_language_support", False)
+            if not lang_support_enabled:
+                self.handle_backend_menu()
+            else:
+                self.handle_language_menu()
 
     def handle_language_menu(self):
         self.state = SetupState.SELECTING_LANGUAGE
