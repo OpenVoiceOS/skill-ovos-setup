@@ -14,20 +14,20 @@ from enum import Enum
 from time import sleep
 
 from adapt.intent import IntentBuilder
-from mycroft.api import DeviceApi, is_paired, check_remote_pairing
+from mycroft.api import is_paired, check_remote_pairing
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
+from ovos_backend_client.backends import BackendType, get_backend_type
+from ovos_backend_client.backends.selene import SELENE_API_URL, SELENE_PRECISE_URL
+from ovos_backend_client.pairing import PairingManager
+from ovos_config.config import update_mycroft_config
+from ovos_plugin_manager.stt import get_stt_lang_configs
+from ovos_plugin_manager.tts import get_tts_lang_configs
 from ovos_utils.gui import can_use_gui
 from ovos_utils.log import LOG
 from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
 from ovos_workshop.skills import OVOSSkill
-from ovos_backend_client.pairing import PairingManager
-from ovos_backend_client.backends import BackendType, get_backend_type
-from ovos_backend_client.backends.selene import SELENE_API_URL
-from ovos_config.config import update_mycroft_config
-from ovos_plugin_manager.stt import get_stt_lang_configs
-from ovos_plugin_manager.tts import get_tts_lang_configs
 
 
 class SetupState(str, Enum):
@@ -116,7 +116,6 @@ class SetupManager:
     def offline_female_tts_module(self):
         return self._offline_female.get("module") or "ovos-tts-plugin-pico"
 
-
     # options configuration
     def set_offline_stt_opt(self, module, config, fallback_module="", fallback_config=None):
         self._offline_stt = {"module": module, "fallback_module": fallback_module, module: config}
@@ -169,14 +168,13 @@ class SetupManager:
         config = {
             "stt": {"module": "ovos-stt-plugin-selene"},
             "server": {
-                "url": "https://api.mycroft.ai",
+                "url": SELENE_API_URL,
                 "version": "v1",
-                "disabled": False,
                 "backend_type": str(BackendType.SELENE)
             },
             "listener": {
                 "wake_word_upload": {
-                    "url": "https://training.mycroft.ai/precise/upload"
+                    "url": SELENE_PRECISE_URL
                 }
             }
         }
@@ -188,7 +186,6 @@ class SetupManager:
             "server": {
                 "url": url,
                 "version": "v1",
-                "disabled": False,
                 "backend_type": str(BackendType.PERSONAL)
             },
             "listener": {
@@ -202,26 +199,10 @@ class SetupManager:
     def change_to_no_backend(self):
         config = {
             "server": {
-                "disabled": True,
                 "backend_type": str(BackendType.OFFLINE)
             }
         }
         update_mycroft_config(config, bus=self.bus)
-
-    # backend actions
-    @staticmethod
-    def update_device_attributes_on_backend():
-        """Communicate version information to the backend.
-
-        The backend tracks core version, enclosure version, platform build
-        and platform name for each device, if it is known.
-        """
-        LOG.info('Sending updated device attributes to the backend...')
-        try:
-            api = DeviceApi()
-            api.update_version()
-        except Exception:
-            pass
 
 
 class PairingSkill(OVOSSkill):
@@ -235,7 +216,7 @@ class PairingSkill(OVOSSkill):
         self.mycroft_ready = False
         self._state = SetupState.LOADING
         self.pairing_mode = PairingMode.VOICE
-        self.selected_language = "en"
+        self.selected_language = None
 
     # startup
     def initialize(self):
@@ -271,13 +252,19 @@ class PairingSkill(OVOSSkill):
             # Name: display name to display in UI
             # Code: Used by ovos shell locale, get tts and stt engines
             # System Code: Used by system as full code is required
-            self.settings["langs"] = [{"name": "English", "code": "en", "system_code": "en_US"},
-                        {"name": "Italian", "code": "it", "system_code": "it_IT"},
-                        {"name": "French", "code": "fr", "system_code": "fr_FR"},
-                        {"name": "Spanish", "code": "es", "system_code": "es_ES"},
-                        {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
-                        {"name": "German", "code": "de", "system_code": "de_DE"},
-                        {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}]
+            self.settings["langs"] = [
+                {"name": "English", "code": "en", "system_code": "en_US"},
+                {"name": "Italian", "code": "it", "system_code": "it_IT"},
+                {"name": "French", "code": "fr", "system_code": "fr_FR"},
+                {"name": "Spanish", "code": "es", "system_code": "es_ES"},
+                {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
+                {"name": "German", "code": "de", "system_code": "de_DE"},
+                {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}
+            ]
+            self.selected_language = self.lang.split("-")[0].lower()
+            if self.selected_language not in [l["code"] for l in self.settings["langs"]]:
+                LOG.warning(f"Default language is not available in {self.skill_id}")
+                self.selected_language = "en"
 
     def _init_setup_options(self):
         self.setup = SetupManager(self.bus)
@@ -342,7 +329,7 @@ class PairingSkill(OVOSSkill):
             self.bus.emit(Message("mycroft.not.paired"))
         else:
             self.handle_display_manager("LoadingSkills")
-            self.setup.update_device_attributes_on_backend()
+            self.pairing.api.update_version()
             self.end_setup(True)
 
     @property
@@ -472,7 +459,7 @@ class PairingSkill(OVOSSkill):
         # allow gui page to linger around a bit
         sleep(5)
         self.handle_display_manager("LoadingSkills")
-        self.setup.update_device_attributes_on_backend()
+        self.pairing.api.update_version()
         self.end_setup(success=True)
 
     def on_pairing_error(self, quiet):
@@ -493,9 +480,9 @@ class PairingSkill(OVOSSkill):
     def handle_welcome_screen(self):
         self.state = SetupState.WELCOME
         self.handle_display_manager("Welcome")
-        sleep(0.3) # Wait for display to show the screen before speaking
+        sleep(0.3)  # Wait for display to show the screen before speaking
         self.speak_dialog("welcome_screen", wait=True)
-        sleep(0.3) # Wait for display a bit before showing the next screen
+        sleep(0.3)  # Wait for display a bit before showing the next screen
         if self.pairing_mode != PairingMode.GUI:
             self.handle_backend_menu()
         else:
@@ -515,7 +502,9 @@ class PairingSkill(OVOSSkill):
     def handle_language_selected(self, message):
         self.selected_language = message.data["code"]
         system_code = message.data["system_code"]
-        self.bus.emit(Message("system.configure.language", data={"code": self.selected_language, "language_code": system_code}))
+        self.bus.emit(Message("system.configure.language",
+                              {"code": self.selected_language,
+                               "language_code": system_code}))
         self.handle_backend_menu()
 
     def handle_language_back_event(self, message):
