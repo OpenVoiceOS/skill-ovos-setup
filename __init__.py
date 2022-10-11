@@ -10,14 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import time
 from enum import Enum
 from time import sleep
-from uuid import uuid4
 
 from adapt.intent import IntentBuilder
 from mycroft.api import DeviceApi, is_paired, check_remote_pairing
-from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.skills.core import intent_handler
 from ovos_utils.gui import can_use_gui
@@ -668,10 +665,7 @@ class PairingSkill(OVOSSkill):
         self.pairing.data = None
         self.setup.change_to_no_backend()
         # auto pair
-        token = "123ABC"
-        self.pairing.data = {"token": token}
-        login = self.pairing.api.activate(self.pairing.uuid, token)
-        IdentityManager.save(login)
+        self.pairing.api.activate(self.pairing.uuid, "123ABC")
         # continue to STT
         self.handle_stt_menu()
 
