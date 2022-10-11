@@ -6,7 +6,7 @@
         <message>
             <location line="31" filename="../LoadingScreen.qml"/>
             <source>Starting Up</source>
-            <translation>Inbetriebnahme</translation>
+            <translation>Starte</translation>
         </message>
         <message>
             <location line="43" filename="../LoadingScreen.qml"/>

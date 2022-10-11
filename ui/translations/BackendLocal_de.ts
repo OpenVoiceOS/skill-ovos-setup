@@ -11,12 +11,12 @@
         <message>
             <location line="39" filename="../BackendLocal.qml"/>
             <source>Needs to be hosted in a private network before hand</source>
-            <translation>Muss vorher in einem privaten Netzwerk gehostet werden</translation>
+            <translation>Muss in einem privaten Netzwerk gehostet werden</translation>
         </message>
         <message>
             <location line="42" filename="../BackendLocal.qml"/>
             <source>Configure STT in backend</source>
-            <translation>Konfigurieren Sie STT im Backend</translation>
+            <translation>Konfiguriere STT im Backend</translation>
         </message>
         <message>
             <location line="45" filename="../BackendLocal.qml"/>
@@ -31,7 +31,7 @@
         <message>
             <location line="120" filename="../BackendLocal.qml"/>
             <source>Manage all your devices using a personal backend</source>
-            <translation>Verwalten Sie alle Ihre Geräte mit einem persönlichen Backend</translation>
+            <translation>Verwalte alle Geräte mit einem persönlichen Backend</translation>
         </message>
         <message>
             <location line="213" filename="../BackendLocal.qml"/>

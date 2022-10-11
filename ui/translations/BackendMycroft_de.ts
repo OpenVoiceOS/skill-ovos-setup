@@ -16,12 +16,12 @@
         <message>
             <location line="41" filename="../BackendMycroft.qml"/>
             <source>Provides Web Skill Settings Interface</source>
-            <translation>Bietet eine Web-Skill-Einstellungsschnittstelle</translation>
+            <translation>Web-Schnittstelle für Skilleinstellungen</translation>
         </message>
         <message>
             <location line="44" filename="../BackendMycroft.qml"/>
             <source>Provides Web Device Configuration Interface</source>
-            <translation>Bietet Web Device Configuration Interface</translation>
+            <translation>Web-Schnittstelle für Gerätekonfigurationen</translation>
         </message>
         <message>
             <location line="83" filename="../BackendMycroft.qml"/>
@@ -31,7 +31,7 @@
         <message>
             <location line="118" filename="../BackendMycroft.qml"/>
             <source>The official backend service provided by</source>
-            <translation>Der offizielle Back-End-Diens</translation>
+            <translation>Der offizielle Back-End-Dienst</translation>
         </message>
         <message>
             <location line="211" filename="../BackendMycroft.qml"/>

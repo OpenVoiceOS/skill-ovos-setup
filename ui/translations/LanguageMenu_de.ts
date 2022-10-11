@@ -11,7 +11,7 @@
         <message>
             <location line="194" filename="../LanguageMenu.qml"/>
             <source>Language selection affects your choice of avialable STT &amp; TTS engines</source>
-            <translation>Die Sprachauswahl wirkt sich auf Ihre Auswahl an verfügbaren STT aus</translation>
+            <translation>Die Sprachauswahl wirkt sich auf Ihre Auswahl an verfügbaren STT &amp; TTS aus</translation>
         </message>
     </context>
 </TS>

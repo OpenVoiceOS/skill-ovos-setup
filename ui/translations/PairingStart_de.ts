@@ -13,7 +13,9 @@
             <source>I'm connected
 and need to be
 activated</source>
-            <translation type="unfinished"/>
+            <translation>Ich bin verbunden
+und muss aktiviert
+werden</translation>
         </message>
     </context>
 </TS>
