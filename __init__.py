@@ -246,6 +246,12 @@ class PairingSkill(OVOSSkill):
 
         if "enable_language_selection" not in self.settings:
             self.settings["enable_language_selection"] = False
+        if "enable_backend_selection" not in self.settings:
+            self.settings["enable_backend_selection"] = True
+        if "enable_stt_selection" not in self.settings:
+            self.settings["enable_stt_selection"] = True
+        if "enable_tts_selection" not in self.settings:
+            self.settings["enable_tts_selection"] = True
 
         if "langs" not in self.settings:
             # Name: display name to display in UI
@@ -512,6 +518,15 @@ class PairingSkill(OVOSSkill):
     #### Backend selection menu
     @killable_event(msg="pairing.backend.menu.stop")
     def handle_backend_menu(self):
+        if not self.settings["enable_backend_selection"]:
+            if self.settings["enable_stt_selection"]:
+                self.handle_stt_menu()
+            elif self.settings["enable_tts_selection"]:
+                self.handle_tts_menu()
+            else:
+                self.end_setup(success=True)
+            return
+
         self.state = SetupState.SELECTING_BACKEND
         self.send_stop_signal("pairing.confirmation.stop")
         self.handle_display_manager("BackendSelect")
@@ -661,6 +676,13 @@ class PairingSkill(OVOSSkill):
     @killable_event(msg="pairing.stt.menu.stop",
                     callback=handle_intent_aborted)
     def handle_stt_menu(self):
+        if not self.settings["enable_stt_selection"]:
+            if self.settings["enable_tts_selection"]:
+                self.handle_tts_menu()
+            else:
+                self.end_setup(success=True)
+            return
+
         self.state = SetupState.SELECTING_STT
         model = get_stt_lang_configs(lang=self.selected_language, include_dialects=True)
         supported_stt_engines = list()
@@ -710,6 +732,10 @@ class PairingSkill(OVOSSkill):
     @killable_event(msg="pairing.tts.menu.stop",
                     callback=handle_intent_aborted)
     def handle_tts_menu(self):
+        if not self.settings["enable_tts_selection"]:
+            self.end_setup(success=True)
+            return
+
         self.state = SetupState.SELECTING_TTS
         model = get_tts_lang_configs(lang=self.selected_language, include_dialects=True)
         supported_tts_engines = list()
@@ -763,11 +789,11 @@ class PairingSkill(OVOSSkill):
             self.setup.change_to_online_female()
 
         self.send_stop_signal("pairing.tts.menu.stop")
-        self.handle_display_manager("LoadingSkills")
         self.end_setup(success=True)
 
     def end_setup(self, success=False):
         if self.state != SetupState.INACTIVE:
+            self.handle_display_manager("LoadingSkills")
             if success:  # dont restart setup on next boot
                 self.settings["first_setup"] = False
             self.state = SetupState.FINISHED
