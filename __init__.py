@@ -228,6 +228,12 @@ class PairingSkill(OVOSSkill):
                                       error_callback=self.on_pairing_error)
         self._init_setup_options()
 
+        # set default language
+        self.selected_language = self.lang.split("-")[0].lower()
+        if self.selected_language not in [l["code"] for l in self.settings["langs"]]:
+            LOG.warning(f"Default language is not available in {self.skill_id}")
+            self.selected_language = "en"
+
         self.add_event("mycroft.not.paired", self.not_paired)
         self.add_event("ovos.setup.state.get", self.handle_get_setup_state)
 
@@ -244,6 +250,10 @@ class PairingSkill(OVOSSkill):
 
         self._init_state()
 
+    def _init_setup_options(self):
+        self.setup = SetupManager(self.bus)
+
+        # configure setup steps based on skill settings, this allows distros to skip some aspects of setup
         if "enable_language_selection" not in self.settings:
             self.settings["enable_language_selection"] = False
         if "enable_backend_selection" not in self.settings:
@@ -253,6 +263,7 @@ class PairingSkill(OVOSSkill):
         if "enable_tts_selection" not in self.settings:
             self.settings["enable_tts_selection"] = True
 
+        # configure selectable languages
         if "langs" not in self.settings:
             # Name: display name to display in UI
             # Code: Used by ovos shell locale, get tts and stt engines
@@ -266,14 +277,8 @@ class PairingSkill(OVOSSkill):
                 {"name": "German", "code": "de", "system_code": "de_DE"},
                 {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}
             ]
-            self.selected_language = self.lang.split("-")[0].lower()
-            if self.selected_language not in [l["code"] for l in self.settings["langs"]]:
-                LOG.warning(f"Default language is not available in {self.skill_id}")
-                self.selected_language = "en"
 
-    def _init_setup_options(self):
-        self.setup = SetupManager(self.bus)
-        # read default values for voice interaction from settings
+        # read default values for simplified voice route from settings
         # this allows images to change these by placing a json file in XDG location
         if self.settings.get("offline_stt"):
             engine = self.settings.get("offline_stt")
