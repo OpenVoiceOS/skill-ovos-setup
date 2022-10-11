@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import json
 from enum import Enum
 from time import sleep
 
@@ -48,11 +49,17 @@ class PairingMode(str, Enum):
     GUI = "gui"  # gui - click buttons
 
 
+def hash_dict(d):
+    return str(hash(json.dumps(d, indent=2, sort_keys=True, ensure_ascii=True)))
+
+
 class SetupManager:
     """ helper class to perform setup actions"""
 
     def __init__(self, bus):
         self.bus = bus
+        self._stt_opts = {}
+        self._tts_opts = {}
         # simplified voice only route
         self._offline_male = {
             "module": "ovos-tts-plugin-mimic",
@@ -92,8 +99,7 @@ class SetupManager:
             "ovos-stt-plugin-vosk-streaming": {}
         }
 
-    @staticmethod
-    def get_stt_lang_options(lang, blacklist=None):
+    def get_stt_lang_options(self, lang, blacklist=None):
         blacklist = blacklist or []
         stt_opts = []
         cfgs = get_stt_lang_configs(lang=lang, include_dialects=True)
@@ -103,14 +109,15 @@ class SetupManager:
             # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
             for config in configs:
-                stt_opts.append({"plugin_name": plugin_display_name,
-                                 "display_name": config.get("display_name", " "),
-                                 "offline": config.get("offline", False),
-                                 "engine": engine})
+                d = {"plugin_name": plugin_display_name,
+                     "display_name": config.get("display_name", " "),
+                     "offline": config.get("offline", False),
+                     "engine": engine}
+                stt_opts.append(d)
+                self._stt_opts[hash_dict(d)] = d
         return stt_opts
 
-    @staticmethod
-    def get_tts_lang_options(lang, blacklist=None):
+    def get_tts_lang_options(self, lang, blacklist=None):
         blacklist = blacklist or []
         tts_opts = []
         cfgs = get_tts_lang_configs(lang=lang, include_dialects=True)
@@ -120,11 +127,13 @@ class SetupManager:
             # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
             for voice in configs:
-                tts_opts.append({"plugin_name": plugin_display_name,
-                                 "display_name": voice.get("display_name", " "),
-                                 "gender": voice.get("gender", " "),
-                                 "offline": voice.get("offline", False),
-                                 'engine': engine})
+                d = {"plugin_name": plugin_display_name,
+                     "display_name": voice.get("display_name", " "),
+                     "gender": voice.get("gender", " "),
+                     "offline": voice.get("offline", False),
+                     'engine': engine}
+                tts_opts.append(d)
+                self._tts_opts[hash_dict(d)] = d
         return tts_opts
 
     @property
@@ -176,12 +185,15 @@ class SetupManager:
 
     # config handling
     def change_tts(self, cfg):
-        tts_module = cfg.pop("engine")
-        tts_cfg = {"module": tts_module, tts_module: cfg}
+        tts_module = cfg["engine"]
+        cfg = self._tts_opts[hash_dict(cfg)]
+        tts_cfg = {"module": tts_module,
+                   tts_module: cfg}
         update_mycroft_config({"tts": tts_cfg}, bus=self.bus)
 
     def change_stt(self, cfg):
-        stt_module = cfg.pop("engine")
+        stt_module = cfg["engine"]
+        cfg = self._stt_opts[hash_dict(cfg)]
         stt_cfg = {"module": stt_module, stt_module: cfg}
         update_mycroft_config({"stt": stt_cfg}, bus=self.bus)
 
