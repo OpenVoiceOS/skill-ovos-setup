@@ -251,6 +251,7 @@ class PairingSkill(OVOSSkill):
         self._init_state()
 
     def _init_setup_options(self):
+        # distros/images can customize setup by placing a json file in skill settings XDG location
         self.setup = SetupManager(self.bus)
 
         # configure setup steps based on skill settings, this allows distros to skip some aspects of setup
@@ -262,6 +263,14 @@ class PairingSkill(OVOSSkill):
             self.settings["enable_stt_selection"] = True
         if "enable_tts_selection" not in self.settings:
             self.settings["enable_tts_selection"] = True
+
+        # limit selectable plugins
+        if "tts_blacklist" not in self.settings:
+            # TODO - espeak, SAM, beepspeak, what else?
+            self.settings["tts_blacklist"] = []
+        if "stt_blacklist" not in self.settings:
+            # TODO - pocketsphinx, what else?
+            self.settings["stt_blacklist"] = []
 
         # configure selectable languages
         if "langs" not in self.settings:
@@ -278,8 +287,8 @@ class PairingSkill(OVOSSkill):
                 {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}
             ]
 
-        # read default values for simplified voice route from settings
-        # this allows images to change these by placing a json file in XDG location
+        # read default plugins for simplified voice route from settings
+        # TODO - validate that these are in fact installed
         if self.settings.get("offline_stt"):
             engine = self.settings.get("offline_stt")
             fallback = self.settings.get("offline_fallback_stt")
@@ -689,9 +698,11 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_STT
-        model = get_stt_lang_configs(lang=self.selected_language, include_dialects=True)
-        supported_stt_engines = list()
-        for engine, configs in model.items():
+        cfgs = get_stt_lang_configs(lang=self.selected_language, include_dialects=True)
+        supported_stt_engines = []
+        for engine, configs in cfgs.items():
+            if engine in self.settings["stt_blacklist"]:
+                continue
             # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
             for config in configs:
@@ -742,9 +753,11 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_TTS
-        model = get_tts_lang_configs(lang=self.selected_language, include_dialects=True)
-        supported_tts_engines = list()
-        for engine, configs in model.items():
+        cfgs = get_tts_lang_configs(lang=self.selected_language, include_dialects=True)
+        supported_tts_engines = []
+        for engine, configs in cfgs.items():
+            if engine in self.settings["stt_blacklist"]:
+                continue
             # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
             plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
             # Need to go one level deeper to get the voice name and gender
