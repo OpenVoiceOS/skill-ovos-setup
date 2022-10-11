@@ -114,7 +114,7 @@ class SetupManager:
                      "offline": config.get("offline", False),
                      "engine": engine}
                 stt_opts.append(d)
-                self._stt_opts[hash_dict(d)] = d
+                self._stt_opts[hash_dict(d)] = config
         return stt_opts
 
     def get_tts_lang_options(self, lang, blacklist=None):
@@ -133,7 +133,7 @@ class SetupManager:
                      "offline": voice.get("offline", False),
                      'engine': engine}
                 tts_opts.append(d)
-                self._tts_opts[hash_dict(d)] = d
+                self._tts_opts[hash_dict(d)] = voice
         return tts_opts
 
     @property
