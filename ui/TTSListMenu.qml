@@ -151,7 +151,14 @@ Item {
 
                     onClicked: {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                        triggerGuiEvent("mycroft.device.confirm.tts", model)
+                       triggerGuiEvent("mycroft.device.confirm.tts", {
+                       "plugin_name": model.plugin_name,
+                       "display_name": model.display_name,
+                       "offline": model.offline,
+                       "lang": model.lang,
+                       "gender": model.gender,
+                       "engine": model.engine,
+                       })
                     }
 
                     onPressed: {
