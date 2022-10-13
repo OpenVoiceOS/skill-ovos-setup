@@ -1,6 +1,9 @@
 name: Run Build Tests
 on:
   push:
+    branches:
+      - master
+      - dev
   pull_request:
   workflow_dispatch:
 
