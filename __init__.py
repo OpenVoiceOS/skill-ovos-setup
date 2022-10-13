@@ -597,12 +597,8 @@ class PairingSkill(OVOSSkill):
         if not self.settings["enable_backend_selection"]:
             if not is_paired():
                 self.handle_no_backend_selected(None)
-            if self.settings["enable_stt_selection"]:
-                self.handle_stt_menu()
-            elif self.settings["enable_tts_selection"]:
-                self.handle_tts_menu()
             else:
-                self.end_setup(success=True)
+                self.handle_stt_menu()
             return
 
         self.state = SetupState.SELECTING_BACKEND
@@ -739,7 +735,7 @@ class PairingSkill(OVOSSkill):
         self.state = SetupState.PAIRING
         self.pairing.kickoff_pairing()
 
-    def handle_no_backend_selected(self, _):
+    def handle_no_backend_selected(self, message):
         self.pairing.pairing_url = self.settings["pairing_url"] = ""
         # this will make a new DeviceApi object internally pointing to right url
         self.pairing.set_api_url("127.0.0.1", backend_type=BackendType.OFFLINE)
