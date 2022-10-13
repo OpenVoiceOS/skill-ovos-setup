@@ -167,6 +167,8 @@ Item {
                     id: btnba1
                     Layout.preferredWidth: backendView.horizontalMode ? parent.width / 2 : parent.width
                     Layout.fillHeight: true
+                    enabled: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
+                    visible: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
