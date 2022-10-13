@@ -276,8 +276,14 @@ class PairingSkill(OVOSSkill):
         self.pairing = None
         self.mycroft_ready = False
         self._state = SetupState.LOADING
-        self.pairing_mode = PairingMode.VOICE
         self.selected_language = None
+
+    @property
+    def pairing_mode(self):
+        if not is_gui_running() or not can_use_touch_mouse():
+            return PairingMode.VOICE
+        else:
+            return PairingMode.GUI
 
     # startup
     def initialize(self):
@@ -381,14 +387,6 @@ class PairingSkill(OVOSSkill):
             self.setup.set_offline_female_opt(engine, cfg)
 
     def _init_state(self):
-        sleep(2)
-        if not is_gui_running() and can_use_touch_mouse():
-            # ask for options in a loop
-            self.pairing_mode = PairingMode.VOICE
-        else:
-            # display gui with minimal dialog
-            self.pairing_mode = PairingMode.GUI
-
         self.first_setup = self.settings.get("first_setup", True)
         # uncomment this line for debugging
         # will always trigger setup on boot
@@ -505,15 +503,6 @@ class PairingSkill(OVOSSkill):
                     .require("pairing").require("device"))
     def handle_pairing(self, message=None):
         self.state = SetupState.SELECTING_BACKEND
-
-        sleep(2)
-        if not is_gui_running() and can_use_touch_mouse():
-            # ask for options in a loop
-            self.pairing_mode = PairingMode.VOICE
-        else:
-            # display gui with minimal dialog
-            self.pairing_mode = PairingMode.GUI
-
         if message:  # intent
             if self.backend_type in [BackendType.SELENE, BackendType.PERSONAL]:
                 if check_remote_pairing(ignore_errors=True):
