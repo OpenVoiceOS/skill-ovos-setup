@@ -524,9 +524,10 @@ class PairingSkill(OVOSSkill):
             self.speak_dialog("pairing.intro")
 
     def on_pairing_code(self, code):
-        data = {"code": '. '.join(map(self.nato_dict.get, code)) + '.'}
-        self.show_pairing(code)
-        self.speak_dialog("pairing.code", data)
+        if self.backend_type == BackendType.SELENE:
+            data = {"code": '. '.join(map(self.nato_dict.get, code)) + '.'}
+            self.show_pairing(code)
+            self.speak_dialog("pairing.code", data)
 
     def on_pairing_success(self):
         self.show_pairing_success()
