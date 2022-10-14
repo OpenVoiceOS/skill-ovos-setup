@@ -3,6 +3,6 @@ ovos-stt-plugin-vosk~=0.1, >=0.1.4a1
 neon-tts-plugin-larynx-server~=0.1
 ovos-tts-plugin-mimic~=0.2, >=0.2.6
 ovos-tts-plugin-mimic2~=0.1,>=0.1.6a3
-ovos_backend_client~=0.0, >=0.0.5a3
+ovos_backend_client~=0.0, >=0.0.6a8
 ovos-stt-plugin-selene~=0.0, >=0.0.2
 ovos-PHAL-plugin-system>=0.0.2a5
