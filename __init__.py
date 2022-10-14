@@ -287,7 +287,7 @@ class PairingSkill(OVOSSkill):
 
     # startup
     def initialize(self):
-        self.pairing = PairingManager(self.bus, self.enclosure,
+        self.pairing = PairingManager(self.bus,
                                       code_callback=self.on_pairing_code,
                                       success_callback=self.on_pairing_success,
                                       end_callback=self.on_pairing_end,
@@ -683,7 +683,7 @@ class PairingSkill(OVOSSkill):
                 return
             elif answer == "no":
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.return.select.backend",
-                                      {"page": BackendType.PERSONAL}))
+                                      {"page": BackendType.OFFLINE}))
                 return
         else:
             self.speak_dialog("selected_no_backend", wait=True)
@@ -705,7 +705,7 @@ class PairingSkill(OVOSSkill):
     def handle_backend_confirmation_event(self, message):
         self.send_stop_signal("pairing.confirmation.stop")
         if message.data["backend"] == BackendType.PERSONAL:
-            self.handle_local_backend_selected(message)
+            self.handle_personal_backend_selected(message)
         elif message.data["backend"] == BackendType.SELENE:
             self.handle_selene_selected(message)
         else:
@@ -721,7 +721,7 @@ class PairingSkill(OVOSSkill):
         self.state = SetupState.PAIRING
         self.pairing.kickoff_pairing()
 
-    def handle_local_backend_selected(self, message):
+    def handle_personal_backend_selected(self, message):
         self.handle_display_manager("BackendPersonalHost")
         self.speak_dialog("local_backend_url_prompt")
 
@@ -733,7 +733,12 @@ class PairingSkill(OVOSSkill):
         self.setup.change_to_local_backend(host)
         # continue to normal pairing process
         self.state = SetupState.PAIRING
+        # dont trigger loop
+        self.pairing.activator_cancelled = True
+        # auto-pair
         self.pairing.kickoff_pairing()
+        self.pairing.check_for_activate()
+        self.pairing.activator_cancelled = False
 
     def handle_no_backend_selected(self, message):
         self.pairing.pairing_url = self.settings["pairing_url"] = ""
