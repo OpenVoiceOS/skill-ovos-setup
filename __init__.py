@@ -318,7 +318,7 @@ class PairingSkill(OVOSSkill):
         #translations
         self.translations["code"] = self.translate_namedvalues("code.spelling")
         self.translations["backend"] = self.translate_namedvalues("options.backend")
-        self.translations["sst"] = self.translate_namedvalues("options.stt")
+        self.translations["stt"] = self.translate_namedvalues("options.stt")
         self.translations["tts"] = self.translate_namedvalues("options.tts")
 
         self._init_state()
@@ -762,7 +762,7 @@ class PairingSkill(OVOSSkill):
             self._stt_menu_voice()
 
     def _stt_menu_voice(self):        
-        options = self._translate("sst").values()
+        options = self._translate("stt").values()
         ans = self.ask_selection(options, "selection.ask.intro", min_conf=0.35)
         LOG.debug("STT select answer (voice): " + ans)
         if ans and self.ask_yesno("stt.confirm", {"stt": ans}) == "yes":
