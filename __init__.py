@@ -634,7 +634,7 @@ class PairingSkill(OVOSSkill):
                 return
             elif self.voc_match(answer, "personal"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
-                                      {"backend": BackendType.PERSONAL}))
+                                      {"backend": BackendType.PERSONAL.value}))
                 return
             elif self.voc_match(answer, "selene"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
@@ -665,25 +665,25 @@ class PairingSkill(OVOSSkill):
                              BackendType.OFFLINE,
                              BackendType.PERSONAL):
             raise ValueError(f"Invalid selection: {selection}")
-        self.speak_dialog(f"backend.confirm.intro.{selection.value}")
+        self.speak_dialog(f"backend.confirm.intro.{selection}")
 
         if self.pairing_mode != PairingMode.VOICE:
-            self.handle_display_manager(f"Backend{selection.value.title()}")
+            self.handle_display_manager(f"Backend{selection.title()}")
             self.speak_dialog("backend.confirm.gui",
-                              {'backend': self._translate("backend", selection.value)})
+                              {'backend': self._translate("backend", selection)})
         if self.pairing_mode != PairingMode.GUI:
             self._backend_confirmation_voice(selection)
 
     def _backend_confirmation_voice(self, selection):
-        self.speak_dialog(f"backend.selected.{selection.value}", wait=True)
+        self.speak_dialog(f"backend.selected.{selection}", wait=True)
         ans = self.ask_yesno("backend.confirm",
-                             {"backend": self._translate("backend", selection.value)})
+                             {"backend": self._translate("backend", selection)})
         LOG.debug("Backend confirmation answer (voice): " + ans)
         if ans == "yes":
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
                           {"backend": selection}))
         elif ans == "no":
-            self._backend_menu_voice()
+            self._backend_menu_voice(wait=3)
         else:
             sleep(3)  # time for abort to kick in
             # (answer will be None and return before this is killed)
