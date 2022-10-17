@@ -231,7 +231,7 @@ class SetupManager:
             "server": {
                 "url": SELENE_API_URL,
                 "version": "v1",
-                "backend_type": str(BackendType.SELENE)
+                "backend_type": BackendType.SELENE.value
             },
             "listener": {
                 "wake_word_upload": {
@@ -247,7 +247,7 @@ class SetupManager:
             "server": {
                 "url": url,
                 "version": "v1",
-                "backend_type": str(BackendType.PERSONAL)
+                "backend_type": BackendType.PERSONAL.value
             },
             "listener": {
                 "wake_word_upload": {
@@ -260,7 +260,7 @@ class SetupManager:
     def change_to_no_backend(self):
         config = {
             "server": {
-                "backend_type": str(BackendType.OFFLINE)
+                "backend_type": BackendType.OFFLINE.value
             }
         }
         update_mycroft_config(config, bus=self.bus)
@@ -621,11 +621,11 @@ class PairingSkill(OVOSSkill):
             LOG.info("ANSWER: " + answer)
             if self.voc_match(answer, "no_backend") or self.voc_match(answer, "local_backend"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
-                                      {"backend": BackendType.OFFLINE}))
+                                      {"backend": BackendType.OFFLINE.value}))
                 return
             elif self.voc_match(answer, "selene_backend"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
-                                      {"backend": BackendType.SELENE}))
+                                      {"backend": BackendType.SELENE.value}))
                 return
             else:
                 self.speak_dialog("backend_not_understood", wait=True)
@@ -680,11 +680,11 @@ class PairingSkill(OVOSSkill):
 
             if answer == "yes":
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
-                                      {"backend": BackendType.SELENE}))
+                                      {"backend": BackendType.SELENE.value}))
                 return
             elif answer == "no":
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.return.select.backend",
-                                      {"page": BackendType.OFFLINE}))
+                                      {"page": BackendType.OFFLINE.value}))
                 return
         else:
             self.speak_dialog("selected_no_backend", wait=True)
@@ -693,11 +693,11 @@ class PairingSkill(OVOSSkill):
                                     {"backend": "offline"})  # TODO: translate `spoken_choice` from dialog files
             if answer == "yes":
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
-                                      {"backend": BackendType.OFFLINE}))
+                                      {"backend": BackendType.OFFLINE.value}))
                 return
             if answer == "no":
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.return.select.backend",
-                                      {"page": BackendType.OFFLINE}))
+                                      {"page": BackendType.OFFLINE.value}))
                 return
         sleep(3)  # time for abort to kick in
         # (answer will be None and return before this is killed)
