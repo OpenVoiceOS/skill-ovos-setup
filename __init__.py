@@ -271,7 +271,7 @@ class PairingSkill(OVOSSkill):
     def __init__(self):
         super(PairingSkill, self).__init__("PairingSkill")
         self.reload_skill = False
-        self.nato_dict = None
+        self.translations = dict()
         self.setup = None
         self.pairing = None
         self.mycroft_ready = False
@@ -314,7 +314,12 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.handle_tts_selected)
         self.gui.register_handler("mycroft.device.confirm.language", self.handle_language_selected)
         self.gui.register_handler("mycroft.return.select.language", self.handle_language_back_event)
-        self.nato_dict = self.translate_namedvalues('codes')
+
+        #translations
+        self.translations["code"] = self.translate_namedvalues("code.spelling")
+        self.translations["backend"] = self.translate_namedvalues("options.backend")
+        self.translations["sst"] = self.translate_namedvalues("options.stt")
+        self.translations["tts"] = self.translate_namedvalues("options.tts")
 
         self._init_state()
 
@@ -411,6 +416,11 @@ class PairingSkill(OVOSSkill):
             self.handle_display_manager("LoadingSkills")
             self.pairing.api.update_version()
             self.end_setup(True)
+    
+    def _translate(self, section:str, key:str=None):
+        if key is None:
+            return self.translations.get(section, {})
+        return self.translations.get(section, {}).get(key, "")
 
     @property
     def backend_type(self):
@@ -507,7 +517,7 @@ class PairingSkill(OVOSSkill):
             if self.backend_type in [BackendType.SELENE, BackendType.PERSONAL]:
                 if check_remote_pairing(ignore_errors=True):
                     # Already paired!
-                    self.speak_dialog("already_paired")
+                    self.speak_dialog("pairing.already.paired")
                     self.show_pairing_success()
                     self.end_setup(success=True)
                     return
@@ -524,10 +534,9 @@ class PairingSkill(OVOSSkill):
             self.speak_dialog("pairing.intro")
 
     def on_pairing_code(self, code):
-        if self.backend_type == BackendType.SELENE:
-            data = {"code": '. '.join(map(self.nato_dict.get, code)) + '.'}
-            self.show_pairing(code)
-            self.speak_dialog("pairing.code", data)
+        data = {"code": '. '.join(map(self._translate("code").get, code)) + '.'}
+        self.show_pairing(code)
+        self.speak_dialog("pairing.code", data)
 
     def on_pairing_success(self):
         self.show_pairing_success()
@@ -544,7 +553,7 @@ class PairingSkill(OVOSSkill):
 
     def on_pairing_error(self, quiet):
         if not quiet:
-            self.speak_dialog("unexpected.error.restarting")
+            self.speak_dialog("error.unexpected.restarting")
         self.show_pairing_fail()
         self.end_setup(success=False)
 
@@ -561,7 +570,7 @@ class PairingSkill(OVOSSkill):
         self.state = SetupState.WELCOME
         self.handle_display_manager("Welcome")
         sleep(0.3)  # Wait for display to show the screen before speaking
-        self.speak_dialog("welcome_screen", wait=True)
+        self.speak_dialog("welcome.screen", wait=True)
         sleep(0.3)  # Wait for display a bit before showing the next screen
         if self.pairing_mode != PairingMode.GUI:
             self.handle_backend_menu()
@@ -579,7 +588,7 @@ class PairingSkill(OVOSSkill):
         supported_languages = self.settings["langs"]
         self.gui["supportedLanguagesModel"] = supported_languages
         self.handle_display_manager("LanguageMenu")
-        self.speak_dialog("language_menu")
+        self.speak_dialog("language.menu")
 
     def handle_language_selected(self, message):
         self.selected_language = message.data["code"]
@@ -605,30 +614,34 @@ class PairingSkill(OVOSSkill):
         self.state = SetupState.SELECTING_BACKEND
         self.send_stop_signal("pairing.confirmation.stop")
         self.handle_display_manager("BackendSelect")
-        self.speak_dialog("backend_intro")
+        self.speak_dialog("backend.intro")
         if self.pairing_mode != PairingMode.VOICE:
-            self.speak_dialog("select_option_gui")
+            self.speak_dialog("options.select.gui")
 
         if self.pairing_mode != PairingMode.GUI:
-            self.speak_dialog("backend_options_intro", wait=True)
-            self.speak_dialog("backend_mycroft", wait=True)
+            self.speak_dialog("backend.options.intro", wait=True)
+            self.speak_dialog("backend.selene", wait=True)
             self._backend_menu_voice()
 
     def _backend_menu_voice(self, wait=0):
         sleep(int(wait))
-        answer = self.get_response("backend_prompt", num_retries=0)
+        answer = self.get_response("backend.prompt", num_retries=0)
         if answer:
-            LOG.info("ANSWER: " + answer)
-            if self.voc_match(answer, "no_backend") or self.voc_match(answer, "local_backend"):
+            LOG.debug("Backend select answer (voice): " + answer)
+            if self.voc_match(answer, "offline"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
                                       {"backend": BackendType.OFFLINE.value}))
                 return
-            elif self.voc_match(answer, "selene_backend"):
+            elif self.voc_match(answer, "personal"):
+                self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
+                                      {"backend": BackendType.PERSONAL}))
+                return
+            elif self.voc_match(answer, "selene"):
                 self.bus.emit(Message(f"{self.skill_id}.mycroft.device.set.backend",
                                       {"backend": BackendType.SELENE.value}))
                 return
             else:
-                self.speak_dialog("backend_not_understood", wait=True)
+                self.speak_dialog("backend.not.understood", wait=True)
 
         sleep(1)  # time for abort to kick in
         # (answer will be None and return before this is killed)
@@ -647,61 +660,34 @@ class PairingSkill(OVOSSkill):
     @killable_event(msg="pairing.confirmation.stop",
                     callback=handle_intent_aborted)
     def handle_backend_confirmation(self, selection):
-        if selection == BackendType.SELENE:
-            self.speak_dialog("intro_confirm_selene")
-        elif selection == BackendType.PERSONAL:
-            self.speak_dialog("intro_confirm_local")
-        elif selection == BackendType.OFFLINE:
-            self.speak_dialog("intro_confirm_no_backend")
+        LOG.debug("Backend selected: " + selection)
+        if selection not in (BackendType.SELENE,
+                             BackendType.OFFLINE,
+                             BackendType.PERSONAL):
+            raise ValueError(f"Invalid selection: {selection}")
+        self.speak_dialog(f"backend.confirm.intro.{selection.value}")
 
         if self.pairing_mode != PairingMode.VOICE:
-            # TODO: translate `spoken_choice` from dialog files
-            if selection == BackendType.SELENE:
-                self.handle_display_manager("BackendMycroft")
-                spoken_choice = "Selene"
-            elif selection == BackendType.PERSONAL:
-                self.handle_display_manager("BackendLocal")
-                spoken_choice = "personal backend"
-            elif selection == BackendType.OFFLINE:
-                self.handle_display_manager("NoBackend")
-                spoken_choice = "no backend"
-            else:
-                raise ValueError(f"Invalid selection: {selection}")
-            self.speak_dialog("backend_confirm_gui", {'backend': spoken_choice})
+            self.handle_display_manager(f"Backend{selection.value.title()}")
+            self.speak_dialog("backend.confirm.gui",
+                              {'backend': self._translate("backend", selection.value)})
         if self.pairing_mode != PairingMode.GUI:
             self._backend_confirmation_voice(selection)
 
     def _backend_confirmation_voice(self, selection):
-        if selection == BackendType.SELENE:
-            self.speak_dialog("selected_mycroft_backend", wait=True)
-            # NOTE response might be None
-            answer = self.ask_yesno("backend_confirm",
-                                    {"backend": "mycroft"})  # TODO: translate `spoken_choice` from dialog files
-
-            if answer == "yes":
-                self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
-                                      {"backend": BackendType.SELENE.value}))
-                return
-            elif answer == "no":
-                self.bus.emit(Message(f"{self.skill_id}.mycroft.return.select.backend",
-                                      {"page": BackendType.OFFLINE.value}))
-                return
+        self.speak_dialog(f"backend.selected.{selection.value}", wait=True)
+        ans = self.ask_yesno("backend.confirm",
+                             {"backend": self._translate("backend", selection.value)})
+        LOG.debug("Backend confirmation answer (voice): " + ans)
+        if ans == "yes":
+            self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
+                          {"backend": selection}))
+        elif ans == "no":
+            self._backend_menu_voice()
         else:
-            self.speak_dialog("selected_no_backend", wait=True)
-            # NOTE response might be None
-            answer = self.ask_yesno("backend_confirm",
-                                    {"backend": "offline"})  # TODO: translate `spoken_choice` from dialog files
-            if answer == "yes":
-                self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
-                                      {"backend": BackendType.OFFLINE.value}))
-                return
-            if answer == "no":
-                self.bus.emit(Message(f"{self.skill_id}.mycroft.return.select.backend",
-                                      {"page": BackendType.OFFLINE.value}))
-                return
-        sleep(3)  # time for abort to kick in
-        # (answer will be None and return before this is killed)
-        self._backend_confirmation_voice(selection)
+            sleep(3)  # time for abort to kick in
+            # (answer will be None and return before this is killed)
+            self._backend_confirmation_voice(selection)
 
     def handle_backend_confirmation_event(self, message):
         self.send_stop_signal("pairing.confirmation.stop")
@@ -724,7 +710,7 @@ class PairingSkill(OVOSSkill):
 
     def handle_personal_backend_selected(self, message):
         self.handle_display_manager("BackendPersonalHost")
-        self.speak_dialog("local_backend_url_prompt")
+        self.speak_dialog("backend.personal.url.prompt")
 
     def handle_personal_backend_url(self, message):
         host = message.data["host_address"]
@@ -769,24 +755,23 @@ class PairingSkill(OVOSSkill):
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
         self.send_stop_signal("pairing.confirmation.stop")
-        self.speak_dialog("stt_intro")
+        self.speak_dialog("stt.intro")
         if self.pairing_mode != PairingMode.VOICE:
-            self.speak_dialog("select_option_gui")
+            self.speak_dialog("options.select.gui")
         if self.pairing_mode != PairingMode.GUI:
             self._stt_menu_voice()
 
-    def _stt_menu_voice(self):
-        self.speak_dialog("select_stt")
-        # TODO - get from .voc for lang support
-        options = ["online", "offline"]
-        ans = self.ask_selection(options, min_conf=0.35)
-        if ans and self.ask_yesno("confirm_stt", {"stt": ans}) == "yes":
+    def _stt_menu_voice(self):        
+        options = self._translate("sst").values()
+        ans = self.ask_selection(options, "selection.ask.intro", min_conf=0.35)
+        LOG.debug("STT select answer (voice): " + ans)
+        if ans and self.ask_yesno("stt.confirm", {"stt": ans}) == "yes":
             engine = self.setup.online_stt_module \
-                if "online" in ans else self.setup.offline_stt_module
+                if ans == self._translate("sst", "online") else self.setup.offline_stt_module
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.stt",
                                   {"engine": engine}))
         else:
-            self.speak_dialog("choice_failed")
+            self.speak_dialog("choice.failed")
             self._stt_menu_voice()
 
     def handle_stt_selected(self, message):
@@ -815,28 +800,27 @@ class PairingSkill(OVOSSkill):
         self.gui["tts_engines"] = supported_tts_engines
         self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")
-        self.speak_dialog("tts_intro")
+        self.speak_dialog("tts.intro")
         if self.pairing_mode != PairingMode.VOICE:
-            self.speak_dialog("select_option_gui")
+            self.speak_dialog("options.select.gui")
         if self.pairing_mode != PairingMode.GUI:
             self._tts_menu_voice()
 
     def _tts_menu_voice(self):
-        self.speak_dialog("select_tts")
-        options = ["online male", "offline male", "offline female", "online female"]
-        ans = self.ask_selection(options, min_conf=0.35)
-        if ans and self.ask_yesno("confirm_tts", {"tts": ans}) == "yes":
+        options = self._translate("tts").values()
+        ans = self.ask_selection(options, "selection.ask.intro", min_conf=0.35)
+        if ans and self.ask_yesno("tts.confirm", {"tts": ans}) == "yes":
             tts = self.setup.online_male_tts_module
-            if ans == "offline male":
+            if ans == self._translate("tts", "offline male"):
                 tts = self.setup.offline_male_tts_module
-            if ans == "online female":
+            elif ans == self._translate("tts", "online female"):
                 tts = self.setup.online_female_tts_module
-            if ans == "offline female":
+            elif ans == self._translate("tts", "offline female"):
                 tts = self.setup.offline_female_tts_module
             self.bus.emit(Message(f'{self.skill_id}.mycroft.device.confirm.tts',
                                   {"engine": tts}))
         else:
-            self.speak_dialog("choice_failed")
+            self.speak_dialog("choice.failed")
             self._tts_menu_voice()
 
     def handle_tts_selected(self, message):
