@@ -1,8 +1,10 @@
 ovos_workshop>=0.0.7a8
-ovos-stt-plugin-vosk~=0.1, >=0.1.4a1
+ovos-stt-plugin-vosk~=0.1, >=0.1.4a2
 neon-tts-plugin-larynx-server~=0.1
-ovos-tts-plugin-mimic~=0.2, >=0.2.6
-ovos-tts-plugin-mimic2~=0.1,>=0.1.6a3
+ovos-tts-plugin-mimic~=0.2, >=0.2.7
+ovos-tts-plugin-mimic2~=0.1,>=0.1.6a4
+ovos-tts-plugin-pico~=0.0, >=0.0.4a2
 ovos_backend_client~=0.0, >=0.0.6a8
-ovos-stt-plugin-selene~=0.0, >=0.0.2
+ovos-stt-plugin-selene~=0.0, >=0.0.3a1
 ovos-PHAL-plugin-system>=0.0.2a5
+ovos-plugin-manager>=0.0.19a7
