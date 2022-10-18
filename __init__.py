@@ -502,7 +502,7 @@ class PairingSkill(OVOSSkill):
 
     # voice events
     def converse(self, message):
-        if not is_gui_running() or not can_use_touch_mouse():
+        if self.pairing_mode != PairingMode.GUI:
             if self.state != SetupState.INACTIVE or \
                     self.state != SetupState.FIRST_BOOT:
                 # capture all utterances until paired
