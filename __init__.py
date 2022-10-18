@@ -504,7 +504,7 @@ class PairingSkill(OVOSSkill):
     def converse(self, message):
         if self.pairing_mode != PairingMode.GUI:
             if self.state != SetupState.INACTIVE and \
-                self.state != SetupState.FINISHED
+                self.state != SetupState.FINISHED:
                 # capture all utterances until paired
                 # prompts from this skill are handled with get_response
                 return True
