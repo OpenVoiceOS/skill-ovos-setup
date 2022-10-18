@@ -1,6 +1,9 @@
 name: Auto translate
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - dev
 
 jobs:
   build_and_publish:

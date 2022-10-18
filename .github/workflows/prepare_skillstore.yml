@@ -3,6 +3,9 @@
 name: Create Skill Store Metadata
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - dev
 
 jobs:
   build_and_publish:
