@@ -1,9 +1,9 @@
 import os
 from os.path import dirname, join, exists
 from ovos_utils.bracket_expansion import expand_options
-from googletranslate_neon_plugin import GoogleTranslator
+from libretranslate_neon_plugin import LibreTranslatePlugin
 
-tx = GoogleTranslator()
+tx = LibreTranslatePlugin(config={"libretranslate_host": "https://libretranslate.2022.us"})
 
 src_lang = "en-us"
 target_langs = ["es-es", "de-de", "fr-fr", "it-it", "pt-pt"]
@@ -24,7 +24,16 @@ for lang in target_langs:
     os.makedirs(join(res_folder, lang), exist_ok=True)
 
     for name, src in src_files.items():
-        dst = join(res_folder, lang, name)
+        if name.endswith(".dialog"):
+            dst = join(res_folder, lang, "dialog", name)
+        elif name.endswith(".voc"):
+            dst = join(res_folder, lang, "vocab", name)
+        elif name.endswith(".rx"):
+            dst = join(res_folder, lang, "regex", name)
+        elif name.endswith(".intent"):
+            dst = join(res_folder, lang, "intents", name)
+        else:
+            dst = join(res_folder, lang, name)
         if exists(dst):
             continue
 
