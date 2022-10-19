@@ -117,20 +117,21 @@ class SetupManager:
                         "offline": config.get("offline", False),
                         "lang": lang,
                         "engine": engine}
-                    stt_opts.append(d)
+                    if preferred and preferred not in blacklist:
+                        # Sort the list for GUI to display the preferred STT engine first
+                        # allow images to set a preferred engine
+                        stt_opts.insert(0, d)
+                    else:
+                        stt_opts.append(d)
                     self._stt_opts[hash_dict(d)] = config
-
-                # Sort the list for GUI to display the preferred STT engine first
-                # allow images to set a preferred engine
-                if preferred and preferred not in blacklist:
-                    stt_opts = sorted(stt_opts, key=lambda x: x["engine"] != preferred, reverse=False)
 
             return stt_opts
 
         except Exception as e:
             LOG.error(e)
-            # Return at least one option to avoid a empty list if its already a dependency
-            return [{"plugin_name": "OVOS STT Plugin Chromium", "display_name": "United States, en-US", "offline": False, "lang": "en-US", "engine": "ovos-stt-plugin-chromium"}]
+            # Return an ampty list if there is an error
+            # GUI will handle this and display an error message
+            return []
 
     def get_tts_lang_options(self, lang, blacklist=None, preferred=None):
         try:
@@ -149,20 +150,21 @@ class SetupManager:
                         "offline": voice.get("offline", False),
                         "lang": lang,
                         'engine': engine}
-                    tts_opts.append(d)
+                    if preferred and preferred not in blacklist:
+                        # Sort the list for GUI to display the preferred TTS engine first
+                        # allow images to set a preferred engine
+                        tts_opts.insert(0, d)
+                    else:
+                        tts_opts.append(d)
                     self._tts_opts[hash_dict(d)] = voice
-
-                # Sort the list for GUI to display the preferred TTS engine first
-                # allow images to set a preferred engine
-                if preferred and preferred not in blacklist:
-                    tts_opts = sorted(tts_opts, key=lambda x: x["engine"] != preferred, reverse=False)
 
             return tts_opts
 
         except Exception as e:
             LOG.error(e)
-            # Return at least one option to avoid a empty list if its already a dependency
-            return [{"plugin_name": "OVOS TTS Plugin Mimic2", "display_name": "Kusal", "gender": "male", "offline": False, "lang": "en-US", "engine": "ovos-tts-plugin-mimic2"}]
+            # Return an ampty list if there is an error
+            # GUI will handle this and display an error message
+            return []
 
     @property
     def offline_stt_module(self):

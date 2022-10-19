@@ -39,6 +39,27 @@ Item {
 
     Rectangle {
         color: Kirigami.Theme.backgroundColor
+        border.color: Kirigami.Theme.highlightColor
+        border.width: 1
+        width: parent.width * 0.80
+        height: Mycroft.Units.gridUnit * 4
+        anchors.centerIn: parent
+        visible: ttsListView.ttsEnginesModel.length > 0 ? 0 : 1
+        enabled: ttsListView.ttsEnginesModel.length > 0 ? 0 : 1
+        z: 5
+
+        Label {
+            id: errorLabelOnEmptyList
+            anchors.fill: parent
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            text: qsTr("Error: TTS Engines Not Available")
+        }
+    }
+
+    Rectangle {
+        color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
 
         Rectangle {
