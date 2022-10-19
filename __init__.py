@@ -101,44 +101,68 @@ class SetupManager:
             "ovos-stt-plugin-vosk-streaming": {}
         }
 
-    def get_stt_lang_options(self, lang, blacklist=None):
-        blacklist = blacklist or []
-        stt_opts = []
-        cfgs = get_stt_lang_configs(lang=lang, include_dialects=True)
-        for engine, configs in cfgs.items():
-            if engine in blacklist:
-                continue
-            # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
-            plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
-            for config in configs:
-                d = {"plugin_name": plugin_display_name,
-                     "display_name": config.get("display_name", " "),
-                     "offline": config.get("offline", False),
-                     "lang": lang,
-                     "engine": engine}
-                stt_opts.append(d)
-                self._stt_opts[hash_dict(d)] = config
-        return stt_opts
+    def get_stt_lang_options(self, lang, blacklist=None, preferred=None):
+        try:
+            blacklist = blacklist or []
+            stt_opts = []
+            cfgs = get_stt_lang_configs(lang=lang, include_dialects=True)
+            for engine, configs in cfgs.items():
+                if engine in blacklist:
+                    continue
+                # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
+                plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
+                for config in configs:
+                    d = {"plugin_name": plugin_display_name,
+                        "display_name": config.get("display_name", " "),
+                        "offline": config.get("offline", False),
+                        "lang": lang,
+                        "engine": engine}
+                    stt_opts.append(d)
+                    self._stt_opts[hash_dict(d)] = config
 
-    def get_tts_lang_options(self, lang, blacklist=None):
-        blacklist = blacklist or []
-        tts_opts = []
-        cfgs = get_tts_lang_configs(lang=lang, include_dialects=True)
-        for engine, configs in cfgs.items():
-            if engine in blacklist:
-                continue
-            # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
-            plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
-            for voice in configs:
-                d = {"plugin_name": plugin_display_name,
-                     "display_name": voice.get("display_name", " "),
-                     "gender": voice.get("gender", " "),
-                     "offline": voice.get("offline", False),
-                     "lang": lang,
-                     'engine': engine}
-                tts_opts.append(d)
-                self._tts_opts[hash_dict(d)] = voice
-        return tts_opts
+                # Sort the list for GUI to display the preferred STT engine first
+                # allow images to set a preferred engine
+                if preferred and preferred not in blacklist:
+                    stt_opts = sorted(stt_opts, key=lambda x: x["engine"] != preferred, reverse=False)
+
+            return stt_opts
+
+        except Exception as e:
+            LOG.error(e)
+            # Return at least one option to avoid a empty list if its already a dependency
+            return [{"plugin_name": "OVOS STT Plugin Chromium", "display_name": "United States, en-US", "offline": False, "lang": "en-US", "engine": "ovos-stt-plugin-chromium"}]
+
+    def get_tts_lang_options(self, lang, blacklist=None, preferred=None):
+        try:
+            blacklist = blacklist or []
+            tts_opts = []
+            cfgs = get_tts_lang_configs(lang=lang, include_dialects=True)
+            for engine, configs in cfgs.items():
+                if engine in blacklist:
+                    continue
+                # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
+                plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
+                for voice in configs:
+                    d = {"plugin_name": plugin_display_name,
+                        "display_name": voice.get("display_name", " "),
+                        "gender": voice.get("gender", " "),
+                        "offline": voice.get("offline", False),
+                        "lang": lang,
+                        'engine': engine}
+                    tts_opts.append(d)
+                    self._tts_opts[hash_dict(d)] = voice
+
+                # Sort the list for GUI to display the preferred TTS engine first
+                # allow images to set a preferred engine
+                if preferred and preferred not in blacklist:
+                    tts_opts = sorted(tts_opts, key=lambda x: x["engine"] != preferred, reverse=False)
+
+            return tts_opts
+
+        except Exception as e:
+            LOG.error(e)
+            # Return at least one option to avoid a empty list if its already a dependency
+            return [{"plugin_name": "OVOS TTS Plugin Mimic2", "display_name": "Kusal", "gender": "male", "offline": False, "lang": "en-US", "engine": "ovos-tts-plugin-mimic2"}]
 
     @property
     def offline_stt_module(self):
@@ -337,6 +361,11 @@ class PairingSkill(OVOSSkill):
         if "enable_tts_selection" not in self.settings:
             self.settings["enable_tts_selection"] = True
 
+        if "preferred_tts_engine" not in self.settings:
+            self.settings["preferred_tts_engine"] = ""
+        if "preferred_stt_engine" not in self.settings:
+            self.settings["preferred_stt_engine"] = ""
+
         # limit selectable plugins
         if "tts_blacklist" not in self.settings:
             self.settings["tts_blacklist"] = ["ovos-tts-plugin-SAM",
@@ -416,7 +445,7 @@ class PairingSkill(OVOSSkill):
             self.handle_display_manager("LoadingSkills")
             self.pairing.api.update_version()
             self.end_setup(True)
-    
+
     def _translate(self, section:str, key:str=None):
         if key is None:
             return self.translations.get(section, {})
@@ -752,7 +781,8 @@ class PairingSkill(OVOSSkill):
 
         self.state = SetupState.SELECTING_STT
         supported_stt_engines = self.setup.get_stt_lang_options(self.selected_language,
-                                                                self.settings["stt_blacklist"])
+                                                                self.settings["stt_blacklist"], self.settings["preferred_stt_engine"])
+        self.log.info("Supported STT engines: " + str(supported_stt_engines))
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
         self.send_stop_signal("pairing.confirmation.stop")
@@ -762,7 +792,7 @@ class PairingSkill(OVOSSkill):
         if self.pairing_mode != PairingMode.GUI:
             self._stt_menu_voice()
 
-    def _stt_menu_voice(self):        
+    def _stt_menu_voice(self):
         options = self._translate("stt").values()
         ans = self.ask_selection(options, "selection.ask.intro", min_conf=0.35)
         LOG.debug("STT select answer (voice): " + ans)
@@ -797,7 +827,7 @@ class PairingSkill(OVOSSkill):
 
         self.state = SetupState.SELECTING_TTS
         supported_tts_engines = self.setup.get_tts_lang_options(self.selected_language,
-                                                                self.settings["tts_blacklist"])
+                                                                self.settings["tts_blacklist"], self.settings["preferred_tts_engine"])
         self.gui["tts_engines"] = supported_tts_engines
         self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")
