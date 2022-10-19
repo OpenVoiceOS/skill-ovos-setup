@@ -117,7 +117,7 @@ class SetupManager:
                         "offline": config.get("offline", False),
                         "lang": lang,
                         "engine": engine}
-                    if preferred and preferred not in blacklist:
+                    if preferred and preferred not in blacklist and preferred == engine:
                         # Sort the list for GUI to display the preferred STT engine first
                         # allow images to set a preferred engine
                         stt_opts.insert(0, d)
@@ -150,7 +150,7 @@ class SetupManager:
                         "offline": voice.get("offline", False),
                         "lang": lang,
                         'engine': engine}
-                    if preferred and preferred not in blacklist:
+                    if preferred and preferred not in blacklist and preferred == engine:
                         # Sort the list for GUI to display the preferred TTS engine first
                         # allow images to set a preferred engine
                         tts_opts.insert(0, d)
