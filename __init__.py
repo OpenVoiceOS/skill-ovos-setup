@@ -845,6 +845,9 @@ class PairingSkill(OVOSSkill):
         if self.state != SetupState.INACTIVE:
             self.handle_display_manager("LoadingSkills")
             if success:  # dont restart setup on next boot
+                if self.pairing_mode == PairingMode.GUI and \
+                    self.settings["first_setup"] == True:
+                        self.bus.emit(Message("system.reboot")) # restart because ww engine does not work if not rebooted
                 self.settings["first_setup"] = False
             self.state = SetupState.FINISHED
             self.bus.emit(Message("ovos.setup.finished"))  # tell skill manager to stop waiting for pairing step
