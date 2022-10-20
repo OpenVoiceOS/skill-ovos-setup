@@ -38,14 +38,15 @@ Item {
     }
 
     Rectangle {
+        id: errorBoxStt
         color: Kirigami.Theme.backgroundColor
         border.color: Kirigami.Theme.highlightColor
         border.width: 1
         width: parent.width * 0.80
         height: Mycroft.Units.gridUnit * 4
         anchors.centerIn: parent
-        visible: sttListView.sttEnginesModel.length > 0 ? 0 : 1
-        enabled: sttListView.sttEnginesModel.length > 0 ? 0 : 1
+        visible: qViewL.count > 0 ? 0 : 1
+        enabled: qViewL.count > 0 ? 0 : 1
         z: 5
 
         Label {

@@ -44,8 +44,8 @@ Item {
         width: parent.width * 0.80
         height: Mycroft.Units.gridUnit * 4
         anchors.centerIn: parent
-        visible: ttsListView.ttsEnginesModel.length > 0 ? 0 : 1
-        enabled: ttsListView.ttsEnginesModel.length > 0 ? 0 : 1
+        visible: qViewL.count > 0 ? 0 : 1
+        enabled: qViewL.count > 0 ? 0 : 1
         z: 5
 
         Label {
