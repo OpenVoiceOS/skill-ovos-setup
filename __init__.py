@@ -708,9 +708,9 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_STT
-        supported_stt_engines = PluginUIHelper.get_stt_display_options(self.selected_language,
-                                                                       self.settings["stt_blacklist"],
-                                                                       self.settings["preferred_stt_engine"])
+        supported_stt_engines = PluginUIHelper.get_display_options(self.selected_language, PluginTypes.STT,
+                                                                   self.settings["stt_blacklist"],
+                                                                   self.settings["preferred_stt_engine"])
         self.log.info("Supported STT engines: " + str(supported_stt_engines))
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
@@ -755,9 +755,9 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_TTS
-        supported_tts_engines = PluginUIHelper.get_tts_display_options(self.selected_language,
-                                                                       self.settings["tts_blacklist"],
-                                                                       self.settings["preferred_tts_engine"])
+        supported_tts_engines = PluginUIHelper.get_display_options(self.selected_language, PluginTypes.TTS,
+                                                                   self.settings["tts_blacklist"],
+                                                                   self.settings["preferred_tts_engine"])
         self.gui["tts_engines"] = supported_tts_engines
         self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")
