@@ -10,7 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import json
 from enum import Enum
 from time import sleep
 
@@ -21,11 +20,9 @@ from ovos_backend_client.backends import BackendType, get_backend_type
 from ovos_backend_client.backends.selene import SELENE_API_URL, SELENE_PRECISE_URL
 from ovos_backend_client.pairing import PairingManager, is_paired, check_remote_pairing
 from ovos_config.config import update_mycroft_config
-from ovos_plugin_manager.stt import get_stt_lang_configs
-from ovos_plugin_manager.tts import get_tts_lang_configs
-
-from ovos_utils.gui import is_gui_running
+from ovos_plugin_manager.utils.ui import PluginUIHelper
 from ovos_utils.device_input import can_use_touch_mouse
+from ovos_utils.gui import is_gui_running
 from ovos_utils.log import LOG
 from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
@@ -51,17 +48,11 @@ class PairingMode(str, Enum):
     GUI = "gui"  # gui - click buttons
 
 
-def hash_dict(d):
-    return str(hash(json.dumps(d, indent=2, sort_keys=True, ensure_ascii=True)))
-
-
 class SetupManager:
     """ helper class to perform setup actions"""
 
     def __init__(self, bus):
         self.bus = bus
-        self._stt_opts = {}
-        self._tts_opts = {}
         # simplified voice only route
         self._offline_male = {
             "module": "ovos-tts-plugin-mimic",
@@ -100,73 +91,6 @@ class SetupManager:
             "ovos-stt-plugin-vosk": {},
             "ovos-stt-plugin-vosk-streaming": {}
         }
-
-    def get_stt_lang_options(self, lang, blacklist=None, preferred=None, max_opts=20):
-        # NOTE: GUI will crash if theres more than 20 options according to @aiix
-        try:
-            blacklist = blacklist or []
-            stt_opts = []
-            cfgs = get_stt_lang_configs(lang=lang, include_dialects=True)
-            for engine, configs in cfgs.items():
-                if engine in blacklist:
-                    continue
-                # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
-                plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
-                for config in configs:
-                    d = {"plugin_name": plugin_display_name,
-                        "display_name": config.get("display_name", " "),
-                        "offline": config.get("offline", False),
-                        "lang": lang,
-                        "engine": engine}
-                    if preferred and preferred not in blacklist and preferred == engine:
-                        # Sort the list for GUI to display the preferred STT engine first
-                        # allow images to set a preferred engine
-                        stt_opts.insert(0, d)
-                    else:
-                        stt_opts.append(d)
-                    self._stt_opts[hash_dict(d)] = config
-
-            return stt_opts[:max_opts]
-
-        except Exception as e:
-            LOG.error(e)
-            # Return an ampty list if there is an error
-            # GUI will handle this and display an error message
-            return []
-
-    def get_tts_lang_options(self, lang, blacklist=None, preferred=None, max_opts=20):
-        # NOTE: GUI will crash if theres more than 20 options according to @aiix
-        try:
-            blacklist = blacklist or []
-            tts_opts = []
-            cfgs = get_tts_lang_configs(lang=lang, include_dialects=True)
-            for engine, configs in cfgs.items():
-                if engine in blacklist:
-                    continue
-                # For Display purposes, we want to show the engine name without the underscore or dash and capitalized all
-                plugin_display_name = engine.replace("_", " ").replace("-", " ").title()
-                for voice in configs:
-                    d = {"plugin_name": plugin_display_name,
-                        "display_name": voice.get("display_name", " "),
-                        "gender": voice.get("gender", " "),
-                        "offline": voice.get("offline", False),
-                        "lang": lang,
-                        'engine': engine}
-                    if preferred and preferred not in blacklist and preferred == engine:
-                        # Sort the list for GUI to display the preferred TTS engine first
-                        # allow images to set a preferred engine
-                        tts_opts.insert(0, d)
-                    else:
-                        tts_opts.append(d)
-                    self._tts_opts[hash_dict(d)] = voice
-
-            return tts_opts[:max_opts]
-
-        except Exception as e:
-            LOG.error(e)
-            # Return an ampty list if there is an error
-            # GUI will handle this and display an error message
-            return []
 
     @property
     def offline_stt_module(self):
@@ -218,14 +142,14 @@ class SetupManager:
     # config handling
     def change_tts(self, cfg):
         tts_module = cfg["engine"]
-        cfg = self._tts_opts[hash_dict(cfg)]
+        cfg = PluginUIHelper.tts_option2config(cfg)
         tts_cfg = {"module": tts_module,
                    tts_module: cfg}
         update_mycroft_config({"tts": tts_cfg}, bus=self.bus)
 
     def change_stt(self, cfg):
         stt_module = cfg["engine"]
-        cfg = self._stt_opts[hash_dict(cfg)]
+        cfg = PluginUIHelper.stt_option2config(cfg)
         stt_cfg = {"module": stt_module, stt_module: cfg}
         update_mycroft_config({"stt": stt_cfg}, bus=self.bus)
 
@@ -343,7 +267,7 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.language", self.handle_language_selected)
         self.gui.register_handler("mycroft.return.select.language", self.handle_language_back_event)
 
-        #translations
+        # translations
         self.translations["code"] = self.translate_namedvalues("code.spelling")
         self.translations["backend"] = self.translate_namedvalues("options.backend")
         self.translations["stt"] = self.translate_namedvalues("options.stt")
@@ -450,7 +374,7 @@ class PairingSkill(OVOSSkill):
             self.pairing.api.update_version()
             self.end_setup(True)
 
-    def _translate(self, section:str, key:str=None):
+    def _translate(self, section: str, key: str = None):
         if key is None:
             return self.translations.get(section, {})
         return self.translations.get(section, {}).get(key, "")
@@ -537,7 +461,7 @@ class PairingSkill(OVOSSkill):
     def converse(self, message):
         if self.pairing_mode != PairingMode.GUI:
             if self.state != SetupState.INACTIVE and \
-                self.state != SetupState.FINISHED:
+                    self.state != SetupState.FINISHED:
                 # capture all utterances until paired
                 # prompts from this skill are handled with get_response
                 return True
@@ -715,7 +639,7 @@ class PairingSkill(OVOSSkill):
         LOG.debug("Backend confirmation answer (voice): " + ans)
         if ans == "yes":
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
-                          {"backend": selection}))
+                                  {"backend": selection}))
         elif ans == "no":
             self._backend_menu_voice(wait=3)
         else:
@@ -784,8 +708,9 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_STT
-        supported_stt_engines = self.setup.get_stt_lang_options(self.selected_language,
-                                                                self.settings["stt_blacklist"], self.settings["preferred_stt_engine"])
+        supported_stt_engines = PluginUIHelper.get_stt_display_options(self.selected_language,
+                                                                       self.settings["stt_blacklist"],
+                                                                       self.settings["preferred_stt_engine"])
         self.log.info("Supported STT engines: " + str(supported_stt_engines))
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
@@ -830,8 +755,9 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_TTS
-        supported_tts_engines = self.setup.get_tts_lang_options(self.selected_language,
-                                                                self.settings["tts_blacklist"], self.settings["preferred_tts_engine"])
+        supported_tts_engines = PluginUIHelper.get_tts_display_options(self.selected_language,
+                                                                       self.settings["tts_blacklist"],
+                                                                       self.settings["preferred_tts_engine"])
         self.gui["tts_engines"] = supported_tts_engines
         self.handle_display_manager("TTSListMenu")
         self.send_stop_signal("pairing.stt.menu.stop")
