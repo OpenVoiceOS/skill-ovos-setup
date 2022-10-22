@@ -101,7 +101,8 @@ class SetupManager:
             "ovos-stt-plugin-vosk-streaming": {}
         }
 
-    def get_stt_lang_options(self, lang, blacklist=None, preferred=None):
+    def get_stt_lang_options(self, lang, blacklist=None, preferred=None, max_opts=20):
+        # NOTE: GUI will crash if theres more than 20 options according to @aiix
         try:
             blacklist = blacklist or []
             stt_opts = []
@@ -125,7 +126,7 @@ class SetupManager:
                         stt_opts.append(d)
                     self._stt_opts[hash_dict(d)] = config
 
-            return stt_opts
+            return stt_opts[:max_opts]
 
         except Exception as e:
             LOG.error(e)
@@ -133,7 +134,8 @@ class SetupManager:
             # GUI will handle this and display an error message
             return []
 
-    def get_tts_lang_options(self, lang, blacklist=None, preferred=None):
+    def get_tts_lang_options(self, lang, blacklist=None, preferred=None, max_opts=20):
+        # NOTE: GUI will crash if theres more than 20 options according to @aiix
         try:
             blacklist = blacklist or []
             tts_opts = []
@@ -158,7 +160,7 @@ class SetupManager:
                         tts_opts.append(d)
                     self._tts_opts[hash_dict(d)] = voice
 
-            return tts_opts
+            return tts_opts[:max_opts]
 
         except Exception as e:
             LOG.error(e)
