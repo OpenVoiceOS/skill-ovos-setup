@@ -50,6 +50,7 @@ jobs:
           python -m pip install build wheel
       - name: Install core repo
         run: |
+          pip install git+https://github.com/OpenVoiceOS/ovos-plugin-manager@feat/gui_helper
           pip install .
       - name: Install test dependencies
         run: |
