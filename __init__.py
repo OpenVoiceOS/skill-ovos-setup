@@ -20,7 +20,7 @@ from ovos_backend_client.backends import BackendType, get_backend_type
 from ovos_backend_client.backends.selene import SELENE_API_URL, SELENE_PRECISE_URL
 from ovos_backend_client.pairing import PairingManager, is_paired, check_remote_pairing
 from ovos_config.config import update_mycroft_config
-from ovos_plugin_manager.utils.ui import PluginUIHelper
+from ovos_plugin_manager.utils.ui import PluginUIHelper, PluginTypes
 from ovos_utils.device_input import can_use_touch_mouse
 from ovos_utils.gui import is_gui_running
 from ovos_utils.log import LOG
@@ -142,14 +142,14 @@ class SetupManager:
     # config handling
     def change_tts(self, cfg):
         tts_module = cfg["engine"]
-        cfg = PluginUIHelper.tts_option2config(cfg)
+        cfg = PluginUIHelper.option2config(cfg, PluginTypes.TTS)
         tts_cfg = {"module": tts_module,
                    tts_module: cfg}
         update_mycroft_config({"tts": tts_cfg}, bus=self.bus)
 
     def change_stt(self, cfg):
         stt_module = cfg["engine"]
-        cfg = PluginUIHelper.stt_option2config(cfg)
+        cfg = PluginUIHelper.option2config(cfg, PluginTypes.STT)
         stt_cfg = {"module": stt_module, stt_module: cfg}
         update_mycroft_config({"stt": stt_cfg}, bus=self.bus)
 
