@@ -51,6 +51,51 @@ class PairingMode(str, Enum):
     GUI = "gui"  # gui - click buttons
 
 
+
+class GUIHelper:
+    """ helper class for better handling of specific setup GUI like list"""
+
+    def __init__(self) -> None:
+        pass
+
+    def distinguish_models_tts(self, model):
+        """ distinguish the model to a separate list for engines and voices
+        to build a nested list for the GUI """
+        engines_model = []
+
+        for entry in model:
+            if entry["engine"] not in [engine["engine"] for engine in engines_model]:
+                engines_model.append({"engine": entry["engine"], "plugin_name": entry["plugin_name"], "supports_male_voice": False, "supports_female_voice": False, "supports_offline_mode": False, "supports_online_mode": False,  "voiceModel": []})
+
+        for entry in model:
+            for engine in engines_model:
+                if entry["engine"] == engine["engine"]:
+                    engine["voiceModel"].append(entry)
+
+        supported_genders = []
+        for engine in engines_model:
+            for voice in engine["voiceModel"]:
+                if voice["gender"] not in supported_genders:
+                    supported_genders.append(voice["gender"])
+
+            if "male" in supported_genders:
+                engine["supports_male_voice"] = True
+            if "female" in supported_genders:
+                engine["supports_female_voice"] = True
+
+        supported_modes = []
+        for engine in engines_model:
+            for voice in engine["voiceModel"]:
+                if voice["offline"] not in supported_modes:
+                    supported_modes.append(voice["offline"])
+            if False in supported_modes:
+                engine["supports_online_mode"] = True
+            if True in supported_modes:
+                engine["supports_offline_mode"] = True
+
+        return engines_model
+
+
 def hash_dict(d):
     return str(hash(json.dumps(d, indent=2, sort_keys=True, ensure_ascii=True)))
 
@@ -305,6 +350,7 @@ class PairingSkill(OVOSSkill):
         self.mycroft_ready = False
         self._state = SetupState.LOADING
         self.selected_language = None
+        self.gui_helper = GUIHelper()
 
     @property
     def pairing_mode(self):
@@ -377,6 +423,9 @@ class PairingSkill(OVOSSkill):
                                               "ovos_tts_plugin_espeakng"]
         if "stt_blacklist" not in self.settings:
             self.settings["stt_blacklist"] = ["ovos-stt-plugin-pocketsphinx"]
+
+        if "single_tts_list" not in self.settings:
+            self.settings["single_tts_list"] = False
 
         # configure selectable languages
         if "langs" not in self.settings:
@@ -832,8 +881,18 @@ class PairingSkill(OVOSSkill):
         self.state = SetupState.SELECTING_TTS
         supported_tts_engines = self.setup.get_tts_lang_options(self.selected_language,
                                                                 self.settings["tts_blacklist"], self.settings["preferred_tts_engine"])
-        self.gui["tts_engines"] = supported_tts_engines
+        if self.settings["single_tts_list"]:
+            self.gui["tts_engines"] = supported_tts_engines
+        else:
+            nested_tts_engines = self.gui_helper.distinguish_models_tts(supported_tts_engines)
+            self.gui["tts_engines"] = nested_tts_engines
+
         self.handle_display_manager("TTSListMenu")
+        if self.settings["single_tts_list"]:
+            self.gui.send_event("tts.list.view.change.mode", {"mode": 1})
+        else:
+            self.gui.send_event("tts.list.view.change.mode", {"mode": 0})
+
         self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts.intro")
         if self.pairing_mode != PairingMode.VOICE:
