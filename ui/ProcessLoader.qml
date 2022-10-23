@@ -15,6 +15,14 @@ Mycroft.Delegate {
         z: -1
     }
 
+    onGuiEvent: {
+        switch (eventName) {
+             case "tts.list.view.change.mode":
+                 modeData = data
+                 rootLoader.item.listmode = modeData.mode
+        }
+    }
+
     property var pageToLoad: sessionData.state
 
     contentItem: Loader {

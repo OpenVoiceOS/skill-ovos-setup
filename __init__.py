@@ -302,6 +302,9 @@ class PairingSkill(OVOSSkill):
         if "stt_blacklist" not in self.settings:
             self.settings["stt_blacklist"] = ["ovos-stt-plugin-pocketsphinx"]
 
+        if "single_tts_list" not in self.settings:
+            self.settings["single_tts_list"] = True
+
         # configure selectable languages
         if "langs" not in self.settings:
             # Name: display name to display in UI
@@ -760,8 +763,18 @@ class PairingSkill(OVOSSkill):
         supported_tts_engines = PluginUIHelper.get_display_options(self.selected_language, PluginTypes.TTS,
                                                                    self.settings["tts_blacklist"],
                                                                    self.settings["preferred_tts_engine"])
-        self.gui["tts_engines"] = supported_tts_engines
+        if self.settings["single_tts_list"]:
+            self.gui["tts_engines"] = PluginUIHelper.get_plugin_options(self.selected_language, PluginTypes.TTS)
+        else:
+            nested_tts_engines = self.gui_helper.distinguish_models_tts(supported_tts_engines)
+            self.gui["tts_engines"] = nested_tts_engines
+
         self.handle_display_manager("TTSListMenu")
+        if self.settings["single_tts_list"]:
+            self.gui.send_event("tts.list.view.change.mode", {"mode": 1})
+        else:
+            self.gui.send_event("tts.list.view.change.mode", {"mode": 0})
+
         self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts.intro")
         if self.pairing_mode != PairingMode.VOICE:
