@@ -319,6 +319,8 @@ class PairingSkill(OVOSSkill):
 
         # read default plugins for simplified voice route from settings
         # TODO - validate that these are in fact installed
+        # TODO - parse default value from OPM sorted list,
+        #  should ensure "best installed" plugin is used
         if self.settings.get("offline_stt"):
             engine = self.settings.get("offline_stt")
             fallback = self.settings.get("offline_fallback_stt")
