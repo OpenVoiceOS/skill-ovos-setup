@@ -184,7 +184,7 @@ Item {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         if(ttsListView.listmode  == 0) {
                             ttsListView.listmode = 1
-                            qViewL.model = model.voiceModel
+                            qViewL.model = model.options
                         }
 
                         if(ttsListView.listmode == 1) {
