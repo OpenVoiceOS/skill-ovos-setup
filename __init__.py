@@ -143,6 +143,9 @@ class SetupManager:
     def change_tts(self, cfg):
         tts_module = cfg["engine"]
         cfg = PluginUIHelper.option2config(cfg, PluginTypes.TTS)
+        # plugins report an extra "meta" key for UI consumption, filter it
+        if "meta" in cfg:
+            cfg.pop("meta")
         tts_cfg = {"module": tts_module,
                    tts_module: cfg}
         update_mycroft_config({"tts": tts_cfg}, bus=self.bus)
@@ -150,6 +153,9 @@ class SetupManager:
     def change_stt(self, cfg):
         stt_module = cfg["engine"]
         cfg = PluginUIHelper.option2config(cfg, PluginTypes.STT)
+        # plugins report an extra "meta" key for UI consumption, filter it
+        if "meta" in cfg:
+            cfg.pop("meta")
         stt_cfg = {"module": stt_module, stt_module: cfg}
         update_mycroft_config({"stt": stt_cfg}, bus=self.bus)
 
