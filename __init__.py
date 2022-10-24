@@ -140,9 +140,11 @@ class SetupManager:
         self._online_female = {"module": module, module: config}
 
     # config handling
-    def change_tts(self, cfg):
-        tts_module = cfg["engine"]
-        cfg = PluginUIHelper.option2config(cfg, PluginTypes.TTS)
+    def change_tts(self, opt):
+        tts_module = opt["engine"]
+        if "plugin_type" not in opt:
+            opt["plugin_type"] = PluginTypes.TTS
+        cfg = PluginUIHelper.option2config(opt, PluginTypes.TTS)
         # plugins report an extra "meta" key for UI consumption, filter it
         if "meta" in cfg:
             cfg.pop("meta")
@@ -150,9 +152,11 @@ class SetupManager:
                    tts_module: cfg}
         update_mycroft_config({"tts": tts_cfg}, bus=self.bus)
 
-    def change_stt(self, cfg):
-        stt_module = cfg["engine"]
-        cfg = PluginUIHelper.option2config(cfg, PluginTypes.STT)
+    def change_stt(self, opt):
+        stt_module = opt["engine"]
+        if "plugin_type" not in opt:
+            opt["plugin_type"] = PluginTypes.STT
+        cfg = PluginUIHelper.option2config(opt, PluginTypes.STT)
         # plugins report an extra "meta" key for UI consumption, filter it
         if "meta" in cfg:
             cfg.pop("meta")

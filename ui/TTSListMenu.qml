@@ -190,6 +190,7 @@ Item {
                         if(ttsListView.listmode == 1) {
                             triggerGuiEvent("mycroft.device.confirm.tts", {
                             "plugin_name": modelData.plugin_name,
+                            "plugin_type": "tts",
                             "display_name": modelData.display_name,
                             "offline": modelData.offline,
                             "lang": modelData.lang,

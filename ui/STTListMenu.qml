@@ -175,6 +175,7 @@ Item {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         triggerGuiEvent("mycroft.device.confirm.stt", {
                         "plugin_name": model.plugin_name,
+                        "plugin_type": "stt",
                         "display_name": model.display_name,
                         "offline": model.offline,
                         "lang": model.lang,
