@@ -724,8 +724,8 @@ class PairingSkill(OVOSSkill):
 
         self.state = SetupState.SELECTING_STT
         supported_stt_engines = PluginUIHelper.get_config_options(self.selected_language, PluginTypes.STT,
-                                                                   self.settings["stt_blacklist"],
-                                                                   self.settings["preferred_stt_engine"])
+                                                                  self.settings["stt_blacklist"],
+                                                                  self.settings["preferred_stt_engine"])
         self.log.info("Supported STT engines: " + str(supported_stt_engines))
         self.gui["stt_engines"] = supported_stt_engines
         self.handle_display_manager("STTListMenu")
@@ -770,12 +770,23 @@ class PairingSkill(OVOSSkill):
             return
 
         self.state = SetupState.SELECTING_TTS
-        if self.settings["single_tts_list"]:
-            self.gui["tts_engines"] = PluginUIHelper.get_config_options(self.selected_language, PluginTypes.TTS,
-                                                                         self.settings["tts_blacklist"],
-                                                                         self.settings["preferred_tts_engine"])
-        else:
-            self.gui["tts_engines"] = PluginUIHelper.get_plugin_options(self.selected_language, PluginTypes.TTS)
+
+        single = self.settings.get("single_tts_list")
+        opts = PluginUIHelper.get_config_options(self.selected_language, PluginTypes.TTS,
+                                                 self.settings["tts_blacklist"],
+                                                 self.settings["preferred_tts_engine"])
+        plug_opts = PluginUIHelper.get_plugin_options(self.selected_language, PluginTypes.TTS)
+        if len(plug_opts) == 1:
+            single = True  # only 1 plugin installed, skip plugin selection and show voices directly
+
+        if single is None:
+            # auto detect best display option
+            if len(opts) >= 25:
+                single = False
+            else:
+                single = True
+
+        self.gui["tts_engines"] = opts if single else plug_opts
 
         self.handle_display_manager("TTSListMenu")
         if self.settings["single_tts_list"]:
