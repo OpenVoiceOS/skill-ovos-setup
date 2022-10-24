@@ -312,9 +312,6 @@ class PairingSkill(OVOSSkill):
         if "stt_blacklist" not in self.settings:
             self.settings["stt_blacklist"] = ["ovos-stt-plugin-pocketsphinx"]
 
-        if "single_tts_list" not in self.settings:
-            self.settings["single_tts_list"] = True
-
         # configure selectable languages
         if "langs" not in self.settings:
             # Name: display name to display in UI
@@ -789,7 +786,7 @@ class PairingSkill(OVOSSkill):
         self.gui["tts_engines"] = opts if single else plug_opts
 
         self.handle_display_manager("TTSListMenu")
-        if self.settings["single_tts_list"]:
+        if single:
             self.gui.send_event("tts.list.view.change.mode", {"mode": 1})
         else:
             self.gui.send_event("tts.list.view.change.mode", {"mode": 0})
