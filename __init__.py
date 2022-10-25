@@ -529,7 +529,7 @@ class PairingSkill(OVOSSkill):
 
     def on_pairing_end(self, error_dialog):
         if error_dialog:
-            self.speak_dialog(error_dialog)
+            self.speak_dialog(error_dialog, wait=True)
             self.end_setup(success=False)
         else:
             self.end_setup(success=True)
@@ -796,7 +796,7 @@ class PairingSkill(OVOSSkill):
         self.send_stop_signal("pairing.stt.menu.stop")
         self.speak_dialog("tts.intro", wait=True)
         if self.pairing_mode != PairingMode.VOICE:
-            self.speak_dialog("options.select.gui")
+            self.speak_dialog("options.select.gui", wait=True)
         if self.pairing_mode != PairingMode.GUI:
             self._tts_menu_voice()
 
