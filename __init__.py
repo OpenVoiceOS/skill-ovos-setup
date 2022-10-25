@@ -771,7 +771,8 @@ class PairingSkill(OVOSSkill):
         single = self.settings.get("single_tts_list")
         opts = PluginUIHelper.get_config_options(self.selected_language, PluginTypes.TTS,
                                                  self.settings["tts_blacklist"],
-                                                 self.settings["preferred_tts_engine"])
+                                                 self.settings["preferred_tts_engine"],
+                                                 max_opts=50)
         plug_opts = PluginUIHelper.get_plugin_options(self.selected_language, PluginTypes.TTS)
         if len(plug_opts) == 1:
             single = True  # only 1 plugin installed, skip plugin selection and show voices directly
