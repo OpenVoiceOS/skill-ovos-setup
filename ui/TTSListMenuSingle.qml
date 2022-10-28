@@ -28,15 +28,6 @@ Item {
     anchors.fill: parent
     property bool horizontalMode: root.width > root.height ? 1 : 0
     property var ttsEnginesModel: sessionData.tts_engines
-    property var listmode: sessionData.tts_list_mode ? sessionData.tts_list_mode : 0
-
-    function get_image_on_supported_gender(gen) {
-        if(gen == "male") {
-            return Qt.resolvedUrl("icons/male.png")
-        } else {
-            return Qt.resolvedUrl("icons/female.png")
-        }
-    }
 
     function isOffline(check) {
         if(check) {
@@ -181,22 +172,15 @@ Item {
 
                     onClicked: {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
-                        if(ttsListView.listmode  == 0) {
-                            ttsListView.listmode = 1
-                            qViewL.model = model.options
-                        }
-
-                        if(ttsListView.listmode == 1) {
-                            triggerGuiEvent("mycroft.device.confirm.tts", {
-                            "plugin_name": modelData.plugin_name,
+                        triggerGuiEvent("mycroft.device.confirm.tts", {
+                            "plugin_name": model.plugin_name,
                             "plugin_type": "tts",
-                            "display_name": modelData.display_name,
-                            "offline": modelData.offline,
-                            "lang": modelData.lang,
-                            "gender": modelData.gender,
-                            "engine": modelData.engine,
-                            })
-                        }
+                            "display_name": model.display_name,
+                            "offline": model.offline,
+                            "lang": model.lang,
+                            "gender": model.gender,
+                            "engine": model.engine
+                        })
                     }
 
                     onPressed: {
@@ -230,7 +214,7 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         color: Kirigami.Theme.textColor
                         font.capitalization: Font.AllUppercase
-                        text: ttsListView.listmode  == 1 ? modelData.plugin_name + " | " + modelData.display_name : model.plugin_name
+                        text: model.plugin_name + " | " + model.display_name
                     }
 
                     Rectangle {
@@ -242,8 +226,8 @@ Item {
                         width: Mycroft.Units.gridUnit * 10
                         color: Kirigami.Theme.highlightColor
                         radius: 6
-                        visible: ttsListView.listmode  == 1 ? 1 : 0
-                        enabled: ttsListView.listmode  == 1 ? 1 : 0
+                        visible: true
+                        enabled: true
 
                         Label {
                             id: cItmSuffGender
@@ -254,49 +238,7 @@ Item {
                             color: Kirigami.Theme.textColor
                             font.capitalization: Font.AllUppercase
                             font.bold: true
-                            text: modelData.gender
-                        }
-                    }
-
-                    RowLayout {
-                        visible: ttsListView.listmode  == 0 ? 1 : 0
-                        enabled: ttsListView.listmode  == 0 ? 1 : 0
-                        anchors.right: symbSuff.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.rightMargin: Kirigami.Units.smallSpacing
-                        height: parent.height - Kirigami.Units.largeSpacing
-                        width: Mycroft.Units.gridUnit * 14
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            color: Qt.lighter(Kirigami.Theme.backgroundColor, 1.5)
-                            radius: 6
-                            visible: model.supports_male_voice
-                            enabled: model.supports_male_voice
-
-                            Image {
-                                anchors.centerIn: parent                                
-                                width: Kirigami.Units.iconSizes.medium
-                                height: Kirigami.Units.iconSizes.medium
-                                source: Qt.resolvedUrl("icons/male.svg")
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            color: Qt.lighter(Kirigami.Theme.backgroundColor, 1.5)
-                            radius: 6
-                            visible: model.supports_female_voice
-                            enabled: model.supports_female_voice
-
-                            Image {
-                                anchors.centerIn: parent                                
-                                width: Kirigami.Units.iconSizes.medium
-                                height: Kirigami.Units.iconSizes.medium
-                                source: Qt.resolvedUrl("icons/female.svg")
-                            }
+                            text: model.gender
                         }
                     }
 
@@ -319,47 +261,9 @@ Item {
                             color: Kirigami.Theme.textColor
                             font.capitalization: Font.AllUppercase
                             font.bold: true
-                            visible: ttsListView.listmode  == 1 ? 1 : 0
-                            enabled: ttsListView.listmode  == 1 ? 1 : 0
-                            text: isOffline(modelData.offline)
-                        }
-
-                        RowLayout {
-                            visible: ttsListView.listmode  == 0 ? 1 : 0
-                            enabled: ttsListView.listmode  == 0 ? 1 : 0
-                            anchors.fill: parent
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                color: Qt.lighter(Kirigami.Theme.backgroundColor, 1.5)
-                                radius: 6
-                                visible: model.supports_online_mode
-                                enabled: model.supports_online_mode
-
-                                Kirigami.Icon {
-                                    anchors.centerIn: parent                                
-                                    width: Kirigami.Units.iconSizes.medium
-                                    height: Kirigami.Units.iconSizes.medium
-                                    source: "network-connect"
-                                }
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                color: Qt.lighter(Kirigami.Theme.backgroundColor, 1.5)
-                                radius: 6
-                                visible: model.supports_offline_mode
-                                enabled: model.supports_offline_mode
-
-                                Kirigami.Icon {
-                                    anchors.centerIn: parent                                
-                                    width: Kirigami.Units.iconSizes.medium
-                                    height: Kirigami.Units.iconSizes.medium
-                                    source: "network-disconnect"
-                                }
-                            }
+                            visible: true
+                            enabled: true
+                            text: isOffline(model.offline)
                         }
                     }
                 }
@@ -373,15 +277,6 @@ Item {
             anchors.bottom: parent.bottom
             height: Kirigami.Units.gridUnit * 2
             color: Kirigami.Theme.highlightColor
-
-            Label {
-                anchors.fill: parent
-                wrapMode: Text.WordWrap
-                anchors.margins: Kirigami.Units.smallSpacing
-                verticalAlignment: Text.AlignVCenter
-                color: Kirigami.Theme.textColor
-                text: qsTr("Select a TTS engine to view the available voices")
-            }
         }
     }
 } 
