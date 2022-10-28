@@ -26,9 +26,9 @@ import Mycroft 1.0 as Mycroft
 Item {
     id: ttsListView
     anchors.fill: parent
-    property bool horizontalMode: root.width > root.height ? 1 :0
+    property bool horizontalMode: root.width > root.height ? 1 : 0
     property var ttsEnginesModel: sessionData.tts_engines
-    property var listmode: 0
+    property var listmode: sessionData.tts_list_mode ? sessionData.tts_list_mode : 0
 
     function get_image_on_supported_gender(gen) {
         if(gen == "male") {
