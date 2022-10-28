@@ -18,7 +18,7 @@ Mycroft.Delegate {
     onGuiEvent: {
         switch (eventName) {
              case "tts.list.view.change.mode":
-                 modeData = data
+                 var modeData = data
                  rootLoader.item.listmode = modeData.mode
         }
     }

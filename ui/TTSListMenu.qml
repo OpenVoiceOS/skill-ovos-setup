@@ -22,7 +22,6 @@ import org.kde.kirigami 2.5 as Kirigami
 import org.kde.plasma.core 2.0 as PlasmaCore
 import QtGraphicalEffects 1.0
 import Mycroft 1.0 as Mycroft
-import "code/filter.js" as FilterJS
 
 Item {
     id: ttsListView
