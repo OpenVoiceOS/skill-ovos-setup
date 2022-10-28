@@ -69,6 +69,9 @@ setup(
     packages=[SKILL_PKG],
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),
+    extras_require={
+        "plugins": get_requirements("requirements-plugins.txt")
+    },
     keywords='ovos skill plugin',
     entry_points={'ovos.plugin.skill': PLUGIN_ENTRY_POINT}
 )
