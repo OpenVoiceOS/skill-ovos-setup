@@ -242,10 +242,10 @@ class PairingSkill(OVOSSkill):
 
     @property
     def pairing_mode(self):
-        if not is_gui_running() or not can_use_touch_mouse():
-            return PairingMode.VOICE
-        else:
-            return PairingMode.GUI
+        # if not is_gui_running() or not can_use_touch_mouse():
+        #     return PairingMode.VOICE
+        # else:
+        return PairingMode.GUI
 
     # startup
     def initialize(self):
@@ -325,6 +325,18 @@ class PairingSkill(OVOSSkill):
                 {"name": "Portuguese", "code": "pt", "system_code": "pt_PT"},
                 {"name": "German", "code": "de", "system_code": "de_DE"},
                 {"name": "Dutch", "code": "nl", "system_code": "nl_NL"}
+            ]
+
+        if "backend_list" not in self.settings:
+            # backend_name: display name to display in UI
+            # backend_icon: display icon to display in UI
+            # backend_type: backend type for configuration
+            self.settings["backend_list"] = [
+                {"backend_name": "No Backend", "backend_icon": "icons/nobackend.svg", "backend_type": "offline"},
+                {"backend_name": "Personal Backend", "backend_icon": "icons/personal.svg", "backend_type": "personal"},
+                {"backend_name": "OpenVoice Backend", "backend_icon": "icons/ovos.svg", "backend_type": "ovos"},
+                {"backend_name": "Neon Backend", "backend_icon": "icons/neongecko.svg", "backend_type": "neon"},
+                {"backend_name": "Selene Backend", "backend_icon": "icons/selene.svg", "backend_type": "selene"}
             ]
 
         # read default plugins for simplified voice route from settings
@@ -583,6 +595,7 @@ class PairingSkill(OVOSSkill):
 
         self.state = SetupState.SELECTING_BACKEND
         self.send_stop_signal("pairing.confirmation.stop")
+        self.gui["backend_list"] = self.settings["backend_list"]
         self.handle_display_manager("BackendSelect")
         self.speak_dialog("backend.intro", wait=True)
         if self.pairing_mode != PairingMode.VOICE:
@@ -635,14 +648,15 @@ class PairingSkill(OVOSSkill):
                              BackendType.OFFLINE,
                              BackendType.PERSONAL):
             raise ValueError(f"Invalid selection: {selection}")
-        self.speak_dialog(f"backend.confirm.intro.{selection}", wait=True)
 
         if self.pairing_mode != PairingMode.VOICE:
             self.handle_display_manager(f"Backend{selection.title()}")
+            self.speak_dialog(f"backend.confirm.intro.{selection}", wait=True)
             self.speak_dialog("backend.confirm.gui",
                               {'backend': self._translate("backend", selection)},
                               wait=True)
         if self.pairing_mode != PairingMode.GUI:
+            self.speak_dialog(f"backend.confirm.intro.{selection}", wait=True)
             self._backend_confirmation_voice(selection)
 
     def _backend_confirmation_voice(self, selection):

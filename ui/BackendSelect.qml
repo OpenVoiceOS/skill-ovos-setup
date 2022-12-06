@@ -27,6 +27,7 @@ Item {
     id: backendView
     anchors.fill: parent
     property bool horizontalMode: backendView.width > backendView.height ? 1 : 0
+    property bool languageSelectionEnabled: true //sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
 
     Rectangle {
         color: Kirigami.Theme.backgroundColor
@@ -37,7 +38,7 @@ Item {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            height: Kirigami.Units.gridUnit * 4
+            height: backendSelectionGridView.count < 4 ? Kirigami.Units.gridUnit * 4 : Kirigami.Units.gridUnit * 3
             color: Kirigami.Theme.highlightColor
 
             Kirigami.Icon {
@@ -83,68 +84,41 @@ Item {
             }
         }
 
+        ScrollBar {
+            id: backendScroller
+            anchors.right: parent.right
+            anchors.top: topArea.bottom
+            anchors.bottom: bottomArea.top
+            width: Mycroft.Units.gridUnit
+        }
+
         ColumnLayout {
             id: middleArea
             anchors.bottom: bottomArea.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: topArea.bottom
-            anchors.margins: Mycroft.Units.gridUnit * 2
-        
-            Label {
-                id: warnText
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                wrapMode: Text.WordWrap
-                font.pixelSize: horizontalMode ? (backendView.height > 600 ? topArea.height * 0.4 : topArea.height * 0.25) : topArea.height * 0.3
-                color: Kirigami.Theme.textColor
-                text: qsTr("A backend provides services used by OpenVoiceOS Core")
-            }
+            anchors.leftMargin: Mycroft.Units.gridUnit * 2
+            anchors.rightMargin: Mycroft.Units.gridUnit * 2
+            anchors.topMargin: backendSelectionGridView.count < 4 ? Mycroft.Units.gridUnit * 2 : Mycroft.Units.gridUnit / 2
+            anchors.bottomMargin: backendSelectionGridView.count < 4 ? Mycroft.Units.gridUnit * 2 : Mycroft.Units.gridUnit / 2
 
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.margins: horizontalMode ? Kirigami.Units.largeSpacing : 0
-        
-                GridLayout {
-                    id: backendsGrid
+
+                GridView {
+                    id: backendSelectionGridView
+                    clip: true
                     anchors.fill: parent
-                    z: 1
-                    columns: horizontalMode ? 3 : 1
-                    columnSpacing: Kirigami.Units.largeSpacing
-                    Layout.alignment: Qt.AlignVCenter
-
-                    BackendButton {
-                        id: bt1
-                        backendName: "Selene " + qsTr("Backend")
-                        backendIcon: Qt.resolvedUrl("icons/selene.svg")
-                        backendType: "selene"
+                    cellWidth: horizontalMode ? width / 3 : width
+                    cellHeight: horizontalMode ? (backendSelectionGridView.count < 4 ? height : height / 2) : Kirigami.Units.gridUnit * 4
+                    model: sessionData.backend_list
+                    ScrollBar.vertical: backendScroller
+                    delegate: BackendButton {
+                        implicitWidth: backendSelectionGridView.cellWidth
+                        implicitHeight: backendSelectionGridView.cellHeight
                         horizontalMode: backendView.horizontalMode
-
-                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
-                        Layout.fillHeight: true
-                    }
-
-                    BackendButton {
-                        id: bt2
-                        backendName: qsTr("Personal Backend")
-                        backendIcon: Qt.resolvedUrl("icons/personal.svg")
-                        backendType: "personal"
-                        horizontalMode: backendView.horizontalMode
-                        
-                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
-                        Layout.fillHeight: true
-                    }
-
-                    BackendButton {
-                        id: bt3
-                        backendName: qsTr("No Backend")
-                        backendIcon: Qt.resolvedUrl("icons/nobackend.svg")
-                        backendType: "offline"
-                        horizontalMode: backendView.horizontalMode
-
-                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
-                        Layout.fillHeight: true
                     }
                 }
             }
@@ -156,19 +130,54 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            height: Kirigami.Units.gridUnit * 3
+            height: backendView.horizontalMode ? (backendView.languageSelectionEnabled ? Kirigami.Units.gridUnit * 3 : Kirigami.Units.gridUnit * 2) : (backendView.languageSelectionEnabled ? Kirigami.Units.gridUnit * 5 : Kirigami.Units.gridUnit * 3)
             color: Kirigami.Theme.highlightColor
 
-            RowLayout {
+            GridLayout {
                 anchors.fill: parent
                 anchors.margins: Kirigami.Units.largeSpacing
+                columns: backendView.horizontalMode && backendView.languageSelectionEnabled ? 2 : 1
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: backendView.horizontalMode ? parent.height : parent.height / 2
+
+                    Kirigami.Icon {
+                        id: warnTextIcon
+                        source: "documentinfo"
+                        width: Kirigami.Units.iconSizes.mediumSmall
+                        height: width
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        ColorOverlay {
+                            anchors.fill: parent
+                            source: warnTextIcon
+                            color: Kirigami.Theme.textColor
+                        }
+                    }
+
+                    Label {
+                        id: warnText
+                        anchors.left: warnTextIcon.right
+                        anchors.leftMargin: Mycroft.Units.gridUnit / 2
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        horizontalAlignment: Text.AlignLeft
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
+                        color: Kirigami.Theme.textColor
+                        text: qsTr("A backend provides services used by OpenVoiceOS Core")
+                    }
+                }
 
                 Button {
                     id: btnba1
-                    Layout.preferredWidth: backendView.horizontalMode ? parent.width / 2 : parent.width
+                    Layout.preferredWidth: backendView.horizontalMode ? Kirigami.Units.gridUnit * 10 : parent.width
                     Layout.fillHeight: true
-                    enabled: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
-                    visible: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
+                    enabled: backendView.languageSelectionEnabled ? 1 : 0
+                    visible: backendView.languageSelectionEnabled ? 1 : 0
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
@@ -178,10 +187,13 @@ Item {
                     }
 
                     contentItem: Item {
+                        id: contentsForBtnBa1
                         RowLayout {
                             anchors.centerIn: parent
 
                             Kirigami.Icon {
+                                Layout.topMargin: 5
+                                Layout.bottomMargin: 5
                                 Layout.fillHeight: true
                                 Layout.preferredWidth: height
                                 Layout.alignment: Qt.AlignVCenter
