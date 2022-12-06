@@ -242,10 +242,10 @@ class PairingSkill(OVOSSkill):
 
     @property
     def pairing_mode(self):
-        # if not is_gui_running() or not can_use_touch_mouse():
-        #     return PairingMode.VOICE
-        # else:
-        return PairingMode.GUI
+        if not is_gui_running() or not can_use_touch_mouse():
+            return PairingMode.VOICE
+        else:
+            return PairingMode.GUI
 
     # startup
     def initialize(self):

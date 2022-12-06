@@ -27,7 +27,7 @@ Item {
     id: backendView
     anchors.fill: parent
     property bool horizontalMode: backendView.width > backendView.height ? 1 : 0
-    property bool languageSelectionEnabled: true //sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
+    property bool languageSelectionEnabled: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
 
     Rectangle {
         color: Kirigami.Theme.backgroundColor
