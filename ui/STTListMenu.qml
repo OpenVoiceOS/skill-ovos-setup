@@ -214,6 +214,8 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         color: Kirigami.Theme.textColor
                         font.capitalization: Font.AllUppercase
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
                         text: model.plugin_name + " | " + model.display_name
                     }
 

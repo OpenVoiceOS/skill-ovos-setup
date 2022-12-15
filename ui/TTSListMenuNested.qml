@@ -230,6 +230,8 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         color: Kirigami.Theme.textColor
                         font.capitalization: Font.AllUppercase
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
                         text: ttsListView.listmode  == 1 ? modelData.plugin_name + " | " + modelData.display_name : model.plugin_name
                     }
 
