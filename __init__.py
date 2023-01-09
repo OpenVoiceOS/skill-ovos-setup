@@ -37,6 +37,7 @@ class SetupState(str, Enum):
     WELCOME = "welcome"
     SELECTING_LANGUAGE = "language"
     SELECTING_BACKEND = "backend"
+    QUICK_ENGINE_CONFIG = "engine"
     SELECTING_STT = "stt"
     SELECTING_TTS = "tts"
     PAIRING = "pairing"
@@ -276,6 +277,10 @@ class PairingSkill(OVOSSkill):
         self.gui.register_handler("mycroft.device.confirm.tts", self.handle_tts_selected)
         self.gui.register_handler("mycroft.device.confirm.language", self.handle_language_selected)
         self.gui.register_handler("mycroft.return.select.language", self.handle_language_back_event)
+        self.gui.register_handler("mycroft.device.quick.setup.back", self.handle_customize_engines_back)
+        self.gui.register_handler("mycroft.device.quick.setup.customize", self.handle_customize_engines_event)
+        self.gui.register_handler("mycroft.device.quick.setup.confirm", self.handle_customize_engines_continue)
+        self.gui.register_handler("mycroft.device.stt.tts.menu.back", self.handle_stt_tts_list_back)
 
         # translations
         self.translations["code"] = self.translate_namedvalues("code.spelling")
@@ -364,7 +369,7 @@ class PairingSkill(OVOSSkill):
         self.first_setup = self.settings.get("first_setup", True)
         # uncomment this line for debugging
         # will always trigger setup on boot
-        # self.first_setup = True
+        self.first_setup = True
 
         if not is_connected():
             self.state = SetupState.SELECTING_WIFI
@@ -431,6 +436,14 @@ class PairingSkill(OVOSSkill):
         if value != self._state:
             self._state = value
             self.bus.emit(Message("ovos.setup.state", {"state": self._state}))
+
+    @property
+    def preferred_tts_engine(self):
+        return self.settings.get("preferred_tts_engine")
+
+    @property
+    def preferred_stt_engine(self):
+        return self.settings.get("preferred_stt_engine")
 
     def handle_get_setup_state(self, message):
         self.bus.emit(message.reply("ovos.setup.state",
@@ -706,8 +719,61 @@ class PairingSkill(OVOSSkill):
         self.setup.change_to_no_backend()
         # auto pair
         self.pairing.api.activate(self.pairing.uuid, "123ABC")
-        # continue to STT
+        if self.pairing_mode != PairingMode.VOICE:
+            # continue to quick engine configuration
+            self.handle_quick_engine_configuration()
+        if self.pairing_mode != PairingMode.GUI:
+            # continue to stt
+            self.handle_stt_menu()
+
+    ### Quick engine configuration
+    @killable_event(msg="pairing.quick.engine.config.stop",
+                    callback=handle_intent_aborted)
+    def handle_quick_engine_configuration(self):
+        self.state = SetupState.QUICK_ENGINE_CONFIG
+        def_tts_engine = None
+        def_stt_engine = None
+       
+        if self.preferred_tts_engine:
+            def_tts_engine = self.preferred_tts_engine
+        else:
+            try:
+                def_tts_engine = self.config_core["tts"]["module"]
+            except KeyError:
+                pass
+            
+        if self.preferred_stt_engine:
+            def_stt_engine = self.preferred_stt_engine
+        else:
+            try:
+                def_stt_engine = self.config_core["stt"]["module"]
+            except KeyError:
+                pass
+            
+        if def_tts_engine and def_stt_engine:
+            self.gui["default_tts_engine"] = def_tts_engine
+            self.gui["default_stt_engine"] = def_stt_engine       
+            self.handle_display_manager("DefaultsMenu")
+            self.speak_dialog("quick.defaults.intro", wait=True)
+        else: # there is no preferred engine set in any of the config files, fallback to stt menu
+            self.handle_stt_menu()
+            self.send_stop_signal("pairing.quick.engine.config.stop")
+
+    def handle_customize_engines_event(self, message):
         self.handle_stt_menu()
+
+    def handle_customize_engines_back(self, message):
+        self.handle_backend_confirmation(selection=BackendType.OFFLINE)
+        self.send_stop_signal("pairing.quick.engine.config.stop")
+
+    def handle_customize_engines_continue(self, message):
+        self.setup.change_stt({"engine": message.data.get("stt_engine")})
+        self.setup.change_tts({"engine": message.data.get("tts_engine")})
+        self.send_stop_signal("pairing.quick.engine.config.stop")
+        self.end_setup(success=True)
+        
+    def handle_stt_tts_list_back(self, message):
+        self.handle_quick_engine_configuration()
 
     ### STT selection
     @killable_event(msg="pairing.stt.menu.stop",

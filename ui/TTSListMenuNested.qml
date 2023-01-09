@@ -371,16 +371,65 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            height: Kirigami.Units.gridUnit * 2
+            height: Kirigami.Units.gridUnit * 3
             color: Kirigami.Theme.highlightColor
 
-            Label {
+            RowLayout {
                 anchors.fill: parent
-                wrapMode: Text.WordWrap
-                anchors.margins: Kirigami.Units.smallSpacing
-                verticalAlignment: Text.AlignVCenter
-                color: Kirigami.Theme.textColor
-                text: qsTr("Select a TTS engine to view the available voices")
+                anchors.margins: Kirigami.Units.largeSpacing
+
+                Button {
+                    id: btnba1
+                    Layout.preferredWidth: ttsListView.horizontalMode ? parent.width / 2 : parent.width
+                    Layout.fillHeight: true
+
+                    background: Rectangle {
+                        color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
+                        border.width: 3
+                        border.color: Kirigami.Theme.backgroundColor
+                        radius: 3
+                    }
+
+                    contentItem: Item {
+                        RowLayout {
+                            anchors.centerIn: parent
+
+                            Kirigami.Icon {
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: height
+                                Layout.alignment: Qt.AlignVCenter
+                                source: "arrow-left"
+                            }
+
+                            Kirigami.Heading {
+                                level: 2
+                                Layout.fillHeight: true          
+                                wrapMode: Text.WordWrap
+                                font.bold: true
+                                color: Kirigami.Theme.textColor
+                                text: qsTr("Back")
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignLeft
+                            }
+                        }
+                    }
+
+                    onClicked: {
+                        Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
+                        triggerGuiEvent("mycroft.device.stt.tts.menu.back", {})
+                    }
+                }
+
+
+                Label {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.margins: Kirigami.Units.smallSpacing
+                    wrapMode: Text.WordWrap
+                    verticalAlignment: Text.AlignVCenter
+                    color: Kirigami.Theme.textColor
+                    text: qsTr("Select a TTS engine to view the available voices")
+                }
             }
         }
     }
