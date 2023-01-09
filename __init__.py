@@ -369,7 +369,7 @@ class PairingSkill(OVOSSkill):
         self.first_setup = self.settings.get("first_setup", True)
         # uncomment this line for debugging
         # will always trigger setup on boot
-        self.first_setup = True
+        # self.first_setup = True
 
         if not is_connected():
             self.state = SetupState.SELECTING_WIFI
