@@ -29,6 +29,7 @@ Button {
     property string backendIcon
     property string backendType
     property bool horizontalMode: false
+    property var fontSize
 
     background: Rectangle {
         color: backendButtonControl.down ? "transparent" :  Kirigami.Theme.highlightColor
@@ -101,9 +102,7 @@ Button {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                font.pixelSize: 32
-                minimumPixelSize: 8
-                fontSizeMode: Text.Fit
+                font.pixelSize: backendButtonControl.fontSize
                 text: backendButtonContentsLayout.backendName
             }
 
@@ -140,9 +139,7 @@ Button {
 
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: 32
-                minimumPixelSize: 16
-                fontSizeMode: Text.Fit
+                font.pixelSize: backendButtonControl.fontSize
                 text: backendButtonContentsLayout.backendName
             }
         }

@@ -25,7 +25,9 @@ import Mycroft 1.0 as Mycroft
 
 Item {
     id: backendView
-    anchors.fill: parent
+    //anchors.fill: parent
+    width: 700
+    height: 400
     property bool horizontalMode: backendView.width > backendView.height ? 1 : 0
 
     Rectangle {
@@ -37,7 +39,7 @@ Item {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            height: Kirigami.Units.gridUnit * 4
+            height: Kirigami.Units.gridUnit * 3
             color: Kirigami.Theme.highlightColor
 
             Kirigami.Icon {
@@ -89,7 +91,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: topArea.bottom
-            anchors.margins: Mycroft.Units.gridUnit * 2
+            anchors.margins: Mycroft.Units.gridUnit * 1
         
             Label {
                 id: warnText
@@ -104,7 +106,7 @@ Item {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.margins: horizontalMode ? Kirigami.Units.largeSpacing : 0
+                Layout.margins: horizontalMode ? Kirigami.Units.smallSpacing : 0
         
                 GridLayout {
                     id: backendsGrid
@@ -120,6 +122,7 @@ Item {
                         backendIcon: Qt.resolvedUrl("icons/selene.svg")
                         backendType: "selene"
                         horizontalMode: backendView.horizontalMode
+                        fontSize: warnText.font.pixelSize * 0.9
 
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
@@ -131,6 +134,7 @@ Item {
                         backendIcon: Qt.resolvedUrl("icons/personal.svg")
                         backendType: "personal"
                         horizontalMode: backendView.horizontalMode
+                        fontSize: warnText.font.pixelSize * 0.9
                         
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
@@ -142,6 +146,7 @@ Item {
                         backendIcon: Qt.resolvedUrl("icons/nobackend.svg")
                         backendType: "offline"
                         horizontalMode: backendView.horizontalMode
+                        fontSize: warnText.font.pixelSize * 0.9
 
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
