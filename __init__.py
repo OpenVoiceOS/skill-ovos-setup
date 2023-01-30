@@ -241,6 +241,16 @@ class PairingSkill(OVOSSkill):
         self._state = SetupState.LOADING
         self.selected_language = None
 
+    @classproperty
+    def network_requirements(self):
+        SkillNetworkRequirements(internet_before_load=False,
+                                 network_before_load=False,
+                                 requires_internet=False,
+                                 requires_network=False,
+                                 no_internet_fallback=True,
+                                 no_network_fallback=True)
+        return SkillNetworkRequirements()
+
     @property
     def pairing_mode(self):
         if not is_gui_running() or not can_use_touch_mouse():
