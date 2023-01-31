@@ -1,4 +1,4 @@
-ovos_workshop~=0.0.10, >=0.0.7a8
+ovos_workshop~=0.0, >=0.0.10
 ovos_backend_client~=0.0, >=0.0.6a8
 ovos-PHAL-plugin-system>=0.0.2a5
 ovos-plugin-manager>=0.0.19
