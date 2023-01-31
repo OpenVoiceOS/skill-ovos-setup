@@ -26,7 +26,7 @@ from ovos_utils.gui import is_gui_running
 from ovos_utils.log import LOG
 from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
-from ovos_workshop.skills import OVOSSkill
+from ovos_workshop.skills.ovos import OVOSSkill, SkillNetworkRequirements, classproperty
 
 
 class SetupState(str, Enum):
