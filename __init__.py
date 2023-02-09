@@ -246,7 +246,7 @@ class PairingSkill(OVOSSkill):
 
     @classproperty
     def runtime_requirements(self):
-        RuntimeRequirements(internet_before_load=False,
+        return RuntimeRequirements(internet_before_load=False,
                             network_before_load=False,
                             hui_before_load=False,
                             requires_internet=False,
@@ -255,7 +255,6 @@ class PairingSkill(OVOSSkill):
                             no_internet_fallback=True,
                             no_network_fallback=True,
                             no_gui_fallback=True)
-        return RuntimeRequirements()
 
     @property
     def pairing_mode(self):
