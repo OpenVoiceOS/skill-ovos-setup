@@ -9,6 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+        elif extension_id == "mobile":
+            self.extension = MobileExtension(self.bus, self.gui)
 #
 from enum import Enum
 from time import sleep
@@ -27,7 +29,9 @@ from ovos_utils.log import LOG
 from ovos_utils.network_utils import is_connected
 from ovos_workshop.decorators import killable_event
 from ovos_workshop.skills import OVOSSkill
-from ovos_workshop.skills.base import SkillNetworkRequirements, classproperty
+from ovos_utils.process_utils import RuntimeRequirements
+from ovos_utils import classproperty
+
 
 
 class SetupState(str, Enum):
@@ -243,14 +247,17 @@ class PairingSkill(OVOSSkill):
         self.selected_language = None
 
     @classproperty
-    def network_requirements(self):
-        SkillNetworkRequirements(internet_before_load=False,
-                                 network_before_load=False,
-                                 requires_internet=False,
-                                 requires_network=False,
-                                 no_internet_fallback=True,
-                                 no_network_fallback=True)
-        return SkillNetworkRequirements()
+    def runtime_requirements(self):
+        RuntimeRequirements(internet_before_load=False,
+                            network_before_load=False,
+                            hui_before_load=False,
+                            requires_internet=False,
+                            requires_network=False,
+                            requires_gui=False,
+                            no_internet_fallback=True,
+                            no_network_fallback=True,
+                            no_gui_fallback=True)
+        return RuntimeRequirements()
 
     @property
     def pairing_mode(self):
