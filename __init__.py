@@ -9,8 +9,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-        elif extension_id == "mobile":
-            self.extension = MobileExtension(self.bus, self.gui)
 #
 from enum import Enum
 from time import sleep
