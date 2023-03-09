@@ -21,7 +21,7 @@ Button {
     background: Rectangle {
         color: backendButtonControl.down ? "transparent" :  Kirigami.Theme.highlightColor
         border.width: 6
-        border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+        border.color: backendButtonControl.activeFocus ? Kirigami.Theme.textColor : Qt.darker(Kirigami.Theme.highlightColor, 1.2)
         radius: 10
 
         Rectangle {
@@ -40,6 +40,10 @@ Button {
             backendButtonLoader.item.backendName = backendButtonControl.backendName
             backendButtonLoader.item.backendIcon = backendButtonControl.backendIcon
         }
+    }
+
+    Keys.onReturnPressed: (event)=> {
+        clicked()
     }
 
     onClicked: (mouse)=> {

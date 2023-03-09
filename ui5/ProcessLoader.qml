@@ -17,6 +17,10 @@ Mycroft.Delegate {
 
     property var pageToLoad: sessionData.state
 
+    Keys.onDownPressed: {
+        rootLoader.item.activateKeyNavigation()
+    }
+
     contentItem: Loader {
         id: rootLoader
     }

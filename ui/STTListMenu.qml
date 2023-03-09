@@ -16,6 +16,11 @@ Item {
     property bool horizontalMode: root.width > root.height ? 1 :0
     property var sttEnginesModel: sessionData.stt_engines ? sessionData.stt_engines : []
 
+    function activateKeyNavigation() {
+        qViewL.keyNavigationEnabled = true
+        qViewL.forceActiveFocus()
+    }
+
     function isOffline(check) {
         if(check) {
             return "Offline"
@@ -145,8 +150,11 @@ Item {
                 property int cellHeight: qViewL.height / 4.6
 
                 ScrollBar.vertical: listViewScrollBar
-                
+                KeyNavigation.up: btnba1
+                KeyNavigation.down: btnba1
+
                 delegate: ItemDelegate {
+                    id: sttEngineDelegate
                     width: qViewL.cellWidth
                     height: Math.max(qViewL.cellHeight, Kirigami.Units.gridUnit * 2)
 
@@ -154,8 +162,12 @@ Item {
                         id: delegateSttListBg
                         radius: 10
                         color: Qt.darker(Kirigami.Theme.backgroundColor, 1.5)
-                        border.color: Qt.darker(Kirigami.Theme.textColor, 2.5)
+                        border.color: sttEngineDelegate.activeFocus ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.textColor, 2.5)
                         border.width: 1
+                    }
+
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
                     }
 
                     onClicked: (mouse)=> {
@@ -248,11 +260,12 @@ Item {
                     id: btnba1
                     Layout.preferredWidth: sttListView.horizontalMode ? parent.width / 2 : parent.width
                     Layout.fillHeight: true
+                    KeyNavigation.up: qViewL
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba1.activeFocus || btnba1.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -269,7 +282,7 @@ Item {
 
                             Kirigami.Heading {
                                 level: 2
-                                Layout.fillHeight: true          
+                                Layout.fillHeight: true
                                 wrapMode: Text.WordWrap
                                 font.bold: true
                                 color: Kirigami.Theme.textColor
@@ -280,6 +293,10 @@ Item {
                         }
                     }
 
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
+                    }
+
                     onClicked: (mouse)=> {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         triggerGuiEvent("mycroft.device.stt.tts.menu.back", {})
@@ -288,4 +305,4 @@ Item {
             }
         }
     }
-} 
+}

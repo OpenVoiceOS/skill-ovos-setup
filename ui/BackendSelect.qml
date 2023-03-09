@@ -17,6 +17,10 @@ Item {
     height: 400
     property bool horizontalMode: backendView.width > backendView.height ? 1 : 0
 
+    function activateKeyNavigation() {
+        bt1.forceActiveFocus()
+    }
+
     Rectangle {
         color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
@@ -110,6 +114,8 @@ Item {
                         backendType: "selene"
                         horizontalMode: backendView.horizontalMode
                         fontSize: warnText.font.pixelSize * 0.9
+                        KeyNavigation.right: bt2
+                        KeyNavigation.down: btnba1.visible ? btnba1 : null
 
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
@@ -122,6 +128,9 @@ Item {
                         backendType: "personal"
                         horizontalMode: backendView.horizontalMode
                         fontSize: warnText.font.pixelSize * 0.9
+                        KeyNavigation.left: bt1
+                        KeyNavigation.right: bt3
+                        KeyNavigation.down: btnba1.visible ? btnba1 : null
                         
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
@@ -134,6 +143,9 @@ Item {
                         backendType: "offline"
                         horizontalMode: backendView.horizontalMode
                         fontSize: warnText.font.pixelSize * 0.9
+                        KeyNavigation.left: bt2
+                        KeyNavigation.right: bt3
+                        KeyNavigation.down: btnba1.visible ? btnba1 : null
 
                         Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
                         Layout.fillHeight: true
@@ -161,11 +173,12 @@ Item {
                     Layout.fillHeight: true
                     enabled: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
                     visible: sessionData.language_selection_enabled ? Boolean(sessionData.language_selection_enabled) : 0
+                    KeyNavigation.up: bt1
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba1.activeFocus ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -191,6 +204,10 @@ Item {
                                 horizontalAlignment: Text.AlignLeft
                             }
                         }
+                    }
+
+                    Keys.onReturnPressed: {
+                        clicked()
                     }
 
                     onClicked: (mouse)=> {

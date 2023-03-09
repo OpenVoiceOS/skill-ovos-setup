@@ -16,6 +16,10 @@ Item {
 
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
+    function activateKeyNavigation() {
+        btnba1.forceActiveFocus()
+    }
+
     ListModel {
         id: backendFeatureList
 
@@ -88,7 +92,7 @@ Item {
             }
         }
 
-            
+
         ColumnLayout {
             id: middleArea
             anchors.bottom: bottomArea.top
@@ -172,11 +176,12 @@ Item {
                     id: btnba1
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    KeyNavigation.right: btnba2
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba1.activeFocus || btnba1.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -193,7 +198,7 @@ Item {
 
                             Kirigami.Heading {
                                 level: 2
-                                Layout.fillHeight: true          
+                                Layout.fillHeight: true
                                 wrapMode: Text.WordWrap
                                 font.bold: true
                                 color: Kirigami.Theme.textColor
@@ -202,6 +207,10 @@ Item {
                                 horizontalAlignment: Text.AlignLeft
                             }
                         }
+                    }
+
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
                     }
 
                     onClicked: (mouse)=> {
@@ -214,11 +223,12 @@ Item {
                     id: btnba2
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    KeyNavigation.left: btnba1
 
                     background: Rectangle {
                         color: btnba2.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba2.activeFocus || btnba2.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -236,7 +246,7 @@ Item {
                             Kirigami.Heading {
                                 level: 2
                                 Layout.fillHeight: true
-                                Layout.alignment: Qt.AlignRight          
+                                Layout.alignment: Qt.AlignRight
                                 wrapMode: Text.WordWrap
                                 font.bold: true
                                 color: Kirigami.Theme.textColor
@@ -247,6 +257,10 @@ Item {
                         }
                     }
 
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
+                    }
+
                     onClicked: (mouse)=> {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         triggerGuiEvent("mycroft.device.confirm.backend", {"backend": "personal"})
@@ -255,4 +269,4 @@ Item {
             }
         }
     }
-} 
+}

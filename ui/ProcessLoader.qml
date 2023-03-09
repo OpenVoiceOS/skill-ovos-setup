@@ -20,6 +20,10 @@ Mycroft.Delegate {
         z: -1
     }
 
+    Keys.onDownPressed: (event)=> {
+        rootLoader.item.activateKeyNavigation()
+    }
+
     property var pageToLoad: sessionData.state
 
     contentItem: Loader {

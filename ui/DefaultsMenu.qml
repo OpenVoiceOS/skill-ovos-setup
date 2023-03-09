@@ -19,6 +19,10 @@ Item {
     property var defaultTTSEngine: sessionData.default_tts_engine
     property var defaultSTTEngine: sessionData.default_stt_engine
 
+    function activateKeyNavigation() {
+        configureEnginesButton.forceActiveFocus()
+    }
+
     Rectangle {
         color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
@@ -231,11 +235,12 @@ Item {
                 id: configureEnginesButton
                 Layout.fillWidth: true
                 Layout.preferredHeight: Mycroft.Units.gridUnit * 3
+                KeyNavigation.down: btnba1
 
                 background: Rectangle {
                     color: configureEnginesButton.down ? Kirigami.Theme.highlightColor : Kirigami.Theme.backgroundColor
                     border.width: 2
-                    border.color: configureEnginesButton.down ? Kirigami.Theme.backgroundColor : Kirigami.Theme.highlightColor
+                    border.color: configureEnginesButton.activeFocus || configureEnginesButton.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                     radius: 4
                 }
 
@@ -264,6 +269,10 @@ Item {
                     }
                 }
 
+                Keys.onReturnPressed: (event)=> {
+                    clicked()
+                }
+
                 onClicked: (mouse)=> {
                     Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                     triggerGuiEvent("mycroft.device.quick.setup.customize", {})
@@ -287,11 +296,13 @@ Item {
                     id: btnba1
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    KeyNavigation.up: configureEnginesButton
+                    KeyNavigation.right: btnba2
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba1.activeFocus || btnba1.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -319,6 +330,10 @@ Item {
                         }
                     }
 
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
+                    }
+
                     onClicked: (mouse)=> {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         triggerGuiEvent("mycroft.device.quick.setup.back", {})
@@ -329,11 +344,13 @@ Item {
                     id: btnba2
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    KeyNavigation.up: configureEnginesButton
+                    KeyNavigation.left: btnba1
 
                     background: Rectangle {
                         color: btnba2.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba2.activeFocus || btnba2.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -360,6 +377,10 @@ Item {
                                 horizontalAlignment: Text.AlignRight
                             }
                         }
+                    }
+
+                    Keys.onReturnPressed: (event)=> {
+                        clicked()
                     }
 
                     onClicked: (mouse)=> {
