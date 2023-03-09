@@ -29,10 +29,6 @@ Item {
 
     property bool horizontalMode: backendView.width > backendView.height ? 1 :0
 
-    function activateKeyNavigation() {
-        btnba1.forceActiveFocus()
-    }
-
     ListModel {
         id: backendFeatureList
         ListElement {
@@ -187,12 +183,11 @@ Item {
                     id: btnba1
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    KeyNavigation.right: btnba2
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: btnba1.activeFocus || btnba1.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
+                        border.color: Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -220,10 +215,6 @@ Item {
                         }
                     }
 
-                    Keys.onReturnPressed: {
-                        clicked()
-                    }
-
                     onClicked: {
                         Mycroft.SoundEffects.playClickedSound(Qt.resolvedUrl("sounds/clicked.wav"))
                         triggerGuiEvent("mycroft.return.select.backend", {"page": "offline"})
@@ -234,12 +225,11 @@ Item {
                     id: btnba2
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    KeyNavigation.left: btnba1
 
                     background: Rectangle {
                         color: btnba2.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: btnba2.activeFocus || btnba2.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
+                        border.color: Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -266,10 +256,6 @@ Item {
                                 horizontalAlignment: Text.AlignRight
                             }
                         }
-                    }
-
-                    Keys.onReturnPressed: {
-                        clicked()
                     }
 
                     onClicked: {
