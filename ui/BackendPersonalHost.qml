@@ -28,6 +28,10 @@ Item {
 
     property bool horizontalMode: backendViewPersonalHost.width > backendViewPersonalHost.height ? 1 :0
 
+    function activateKeyNavigation() {
+        hostAddressField.forceActiveFocus()
+    }
+
     Rectangle {
         color: Kirigami.Theme.backgroundColor
         anchors.fill: parent
@@ -106,6 +110,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Mycroft.Units.gridUnit * 4
                     placeholderText: "Example: http://192.168.x.x:6712"
+                    KeyNavigation.down: btnbaAccept
                 }
 
                 Item {
@@ -129,11 +134,12 @@ Item {
                 id: btnbaAccept
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                KeyNavigation.up: hostAddressField
 
                 background: Rectangle {
                     color: btnbaAccept.down ? "transparent" :  Kirigami.Theme.highlightColor
                     border.width: 3
-                    border.color: Qt.darker(Kirigami.Theme.highlightColor, 1.2)
+                    border.color: btnbaAccept.activeFocus || btnbaAccept.hovered ? Kirigami.Theme.textColor : Qt.darker(Kirigami.Theme.highlightColor, 1.2)
                     radius: 10
 
                     Rectangle {
@@ -153,6 +159,10 @@ Item {
                     text: "Confirm"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
+                }
+
+                Keys.onReturnPressed: {
+                    clicked()
                 }
 
                 onClicked: {

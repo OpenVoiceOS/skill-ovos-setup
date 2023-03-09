@@ -29,6 +29,11 @@ Item {
     property bool horizontalMode: root.width > root.height ? 1 : 0
     property var ttsEnginesModel: sessionData.tts_engines
 
+    function activateKeyNavigation() {
+        qViewL.keyNavigationEnabled = true
+        qViewL.forceActiveFocus()
+    }
+
     function isOffline(check) {
         if(check) {
             return "Offline"
@@ -157,8 +162,11 @@ Item {
                 property int cellHeight: qViewL.height / 4.6
 
                 ScrollBar.vertical: listViewScrollBar
-                
+                KeyNavigation.up: btnba1
+                KeyNavigation.down: btnba1
+
                 delegate: ItemDelegate {
+                    id: ttsEngineDelegate
                     width: qViewL.cellWidth
                     height: Math.max(qViewL.cellHeight, Kirigami.Units.gridUnit * 2)
 
@@ -166,8 +174,12 @@ Item {
                         id: delegateSttListBg
                         radius: 10
                         color: Qt.darker(Kirigami.Theme.backgroundColor, 1.5)
-                        border.color: Qt.darker(Kirigami.Theme.textColor, 2.5)
+                        border.color: ttsEngineDelegate.activeFocus ? Kirigami.Theme.highlightColor : Qt.darker(Kirigami.Theme.textColor, 2.5)
                         border.width: 1
+                    }
+
+                    Keys.onReturnPressed: {
+                        clicked()
                     }
 
                     onClicked: {
@@ -288,11 +300,12 @@ Item {
                     id: btnba1
                     Layout.preferredWidth: ttsListView.horizontalMode ? parent.width / 2 : parent.width
                     Layout.fillHeight: true
+                    KeyNavigation.up: qViewL
 
                     background: Rectangle {
                         color: btnba1.down ? "transparent" :  Kirigami.Theme.backgroundColor
                         border.width: 3
-                        border.color: Kirigami.Theme.backgroundColor
+                        border.color: btnba1.activeFocus || btnba1.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                         radius: 3
                     }
 
@@ -318,6 +331,10 @@ Item {
                                 horizontalAlignment: Text.AlignLeft
                             }
                         }
+                    }
+
+                    Keys.onReturnPressed: {
+                        clicked()
                     }
 
                     onClicked: {
