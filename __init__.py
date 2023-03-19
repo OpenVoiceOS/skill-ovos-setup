@@ -647,10 +647,12 @@ class PairingSkill(OVOSSkill):
 
     def handle_backend_selected_event(self, message):
         self.send_stop_signal("pairing.backend.menu.stop")
+        sleep(0.5)
         self.handle_backend_confirmation(message.data["backend"])
 
     def handle_return_event(self, message):
         self.send_stop_signal("pairing.confirmation.stop")
+        sleep(0.5)
         page = message.data.get("page", "")
         self.handle_backend_menu()
 
@@ -677,7 +679,7 @@ class PairingSkill(OVOSSkill):
         self.speak_dialog(f"backend.selected.{selection}", wait=True)
         ans = self.ask_yesno("backend.confirm",
                              {"backend": self._translate("backend", selection)})
-        LOG.debug("Backend confirmation answer (voice): " + ans)
+        LOG.debug("Backend confirmation answer (voice): " + str(ans))
         if ans == "yes":
             self.bus.emit(Message(f"{self.skill_id}.mycroft.device.confirm.backend",
                                   {"backend": selection}))
@@ -690,6 +692,7 @@ class PairingSkill(OVOSSkill):
 
     def handle_backend_confirmation_event(self, message):
         self.send_stop_signal("pairing.confirmation.stop")
+        sleep(0.5)
         if message.data["backend"] == BackendType.PERSONAL:
             self.handle_personal_backend_selected(message)
         elif message.data["backend"] == BackendType.SELENE:
