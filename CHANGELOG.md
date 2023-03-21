@@ -2,7 +2,15 @@
 
 ## [Unreleased](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/HEAD)
 
-[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a3...HEAD)
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a4...HEAD)
+
+**Merged pull requests:**
+
+- Add basic key navigation and button hover [\#73](https://github.com/OpenVoiceOS/skill-ovos-setup/pull/73) ([AIIX](https://github.com/AIIX))
+
+## [V0.0.2a4](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/V0.0.2a4) (2023-02-09)
+
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a3...V0.0.2a4)
 
 **Merged pull requests:**
 
