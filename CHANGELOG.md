@@ -2,7 +2,15 @@
 
 ## [Unreleased](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/HEAD)
 
-[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a4...HEAD)
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a5...HEAD)
+
+**Breaking changes:**
+
+- rm selene + voice route [\#75](https://github.com/OpenVoiceOS/skill-ovos-setup/pull/75) ([JarbasAl](https://github.com/JarbasAl))
+
+## [V0.0.2a5](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/V0.0.2a5) (2023-03-21)
+
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a4...V0.0.2a5)
 
 **Merged pull requests:**
 
