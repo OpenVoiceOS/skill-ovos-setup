@@ -121,20 +121,6 @@ Item {
                     Layout.alignment: Qt.AlignVCenter
 
                     BackendButton {
-                        id: bt1
-                        backendName: "Selene " + qsTr("Backend")
-                        backendIcon: Qt.resolvedUrl("icons/selene.svg")
-                        backendType: "selene"
-                        horizontalMode: backendView.horizontalMode
-                        fontSize: warnText.font.pixelSize * 0.9
-                        KeyNavigation.right: bt2
-                        KeyNavigation.down: btnba1.visible ? btnba1 : null
-
-                        Layout.preferredWidth: horizontalMode ? (parent.width / 3 - Kirigami.Units.gridUnit) : parent.width
-                        Layout.fillHeight: true
-                    }
-
-                    BackendButton {
                         id: bt2
                         backendName: qsTr("Personal Backend")
                         backendIcon: Qt.resolvedUrl("icons/personal.svg")
