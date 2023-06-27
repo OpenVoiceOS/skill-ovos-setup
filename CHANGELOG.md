@@ -2,7 +2,15 @@
 
 ## [Unreleased](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/HEAD)
 
-[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a5...HEAD)
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a6...HEAD)
+
+**Fixed bugs:**
+
+- Initial testing on feat/voice\_pairing branch [\#20](https://github.com/OpenVoiceOS/skill-ovos-setup/issues/20)
+
+## [V0.0.2a6](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/V0.0.2a6) (2023-05-22)
+
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a5...V0.0.2a6)
 
 **Breaking changes:**
 
