@@ -2,6 +2,9 @@
 
 Setup your device, choose a voice and optionally connect to a backend server
 
+WARNING: end users SHOULD NOT install this, if it is needed then it will ship with our images, if you installed ovos manually this will only cause you issues
+
+If the skill wasnt pre-installed, don't do it yourself
 
 ## About 
 
