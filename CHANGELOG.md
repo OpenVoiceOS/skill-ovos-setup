@@ -2,7 +2,15 @@
 
 ## [Unreleased](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/HEAD)
 
-[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a6...HEAD)
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a7...HEAD)
+
+**Fixed bugs:**
+
+- fix skill init [\#78](https://github.com/OpenVoiceOS/skill-ovos-setup/pull/78) ([emphasize](https://github.com/emphasize))
+
+## [V0.0.2a7](https://github.com/OpenVoiceOS/skill-ovos-setup/tree/V0.0.2a7) (2023-06-27)
+
+[Full Changelog](https://github.com/OpenVoiceOS/skill-ovos-setup/compare/V0.0.2a6...V0.0.2a7)
 
 **Fixed bugs:**
 
