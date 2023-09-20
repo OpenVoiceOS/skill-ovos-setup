@@ -209,7 +209,6 @@ class SetupManager:
 class PairingSkill(OVOSSkill):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.reload_skill = False
         self.translations = dict()
         self.setup = None
@@ -217,6 +216,8 @@ class PairingSkill(OVOSSkill):
         self.mycroft_ready = False
         self._state = SetupState.LOADING
         self.selected_language = None
+
+        super().__init__(*args, **kwargs)
 
     @classproperty
     def runtime_requirements(self):
@@ -459,7 +460,7 @@ class PairingSkill(OVOSSkill):
         """Catch info that skills are loaded and ready."""
         self.mycroft_ready = True
         # clear gui, either the pairing page or the initial loading page
-        self.gui.remove_page("ProcessLoader.qml")
+        self.gui.remove_page("ProcessLoader")
         self.bus.emit(Message("mycroft.gui.screen.close",
                               {"skill_id": self.skill_id}))
         self.state = SetupState.INACTIVE
@@ -760,7 +761,7 @@ class PairingSkill(OVOSSkill):
     def handle_display_manager(self, state):
         self.gui["state"] = state
         self.gui.show_page(
-            "ProcessLoader.qml",
+            "ProcessLoader",
             override_idle=True,
             override_animations=True)
 
